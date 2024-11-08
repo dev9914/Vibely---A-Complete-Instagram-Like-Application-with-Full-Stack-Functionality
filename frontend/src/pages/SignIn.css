@@ -1,0 +1,19 @@
+body{
+    height: 100vh;
+    width: 100vw;
+    background-color: #171518;
+    overflow-x: hidden;
+    /* background: linear-gradient(to bottom, #171518 0%, #1d181d 80%, #251b25 100%); */
+}
+.maincard{
+    border: 0.5px solid rgba(255, 255, 255, 0.187);
+    height: 70vh;
+    width: 30vw;
+    background: linear-gradient(to bottom, #171518 0%, #1d181d 50%, #251b25 100%);
+}
+.maincardsignup{
+    border: 0.5px solid rgba(255, 255, 255, 0.187);
+    height: 107vh;
+    width: 30vw;
+    background: linear-gradient(to bottom, #171518 0%, #1d181d 50%, #251b25 100%);
+}
