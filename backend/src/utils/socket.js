@@ -5,7 +5,7 @@ import { app } from "../app.js";  // Ensure this is the correct path and that `a
 const server = createServer(app);
 const io = new Server(server, {
     cors: {
-        origin: ["http://localhost:4000"],  // Adjust for production
+        origin: ["http://localhost:4000","https://vibely-social-media-app-frontend.onrender.com"],  // Adjust for production
         methods: ["GET", "POST"]
     }
 });

@@ -13,7 +13,7 @@ const app = express();
   // ));
 
   app.use(cors({
-    origin: ['http://localhost:4000'],
+    origin: ['http://localhost:4000','https://vibely-social-media-app-frontend.onrender.com'],
     credentials: true
 }))
 
