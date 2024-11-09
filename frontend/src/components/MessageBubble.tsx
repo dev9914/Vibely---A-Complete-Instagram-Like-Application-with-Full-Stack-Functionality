@@ -1,10 +1,8 @@
-import clsx from 'clsx';
-
 interface MessageBubbleProp {
     message: string,
     isSender: boolean,
     sentAt: string,
-    receiverAvatar: string,
+    receiverAvatar: string | undefined,
     userAvatar: string
 }
 
@@ -13,9 +11,9 @@ const MessageBubble = ({ message, isSender, sentAt, receiverAvatar, userAvatar }
   const bubbleBgColor = isSender ? 'bg-blue-500' : "";
   const profilePic = isSender ? userAvatar : receiverAvatar;
 
-  function timeAgo(createdAt:string) {
-    const createdTime = new Date(createdAt);
-    const currentTime = new Date();
+  function timeAgo(createdAt:string): string {
+    const createdTime: number = new Date(createdAt).getTime();
+    const currentTime: number = new Date().getTime();
     const timeDifference = Math.floor((currentTime - createdTime) / 1000); // Difference in seconds
   
     const minutes = Math.floor(timeDifference / 60);

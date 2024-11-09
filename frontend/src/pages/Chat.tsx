@@ -6,7 +6,7 @@ import { IoCallOutline, IoVideocamOutline } from "react-icons/io5";
 import { RxDotFilled, RxInfoCircled } from "react-icons/rx";
 import MessageBubble from "../components/MessageBubble";
 import { Button } from "../components/ui/button";
-import { PiNotePencilBold, PiNotePencilDuotone } from "react-icons/pi";
+import {PiNotePencilDuotone } from "react-icons/pi";
 import { getSocket } from "../components/socket";
 import { Socket } from "socket.io-client";
 import { GoDotFill } from "react-icons/go";
@@ -24,156 +24,28 @@ type Message = {
   _id: string;
 };
 
+interface Item {
+  _id: string,
+  username: string,
+  avatar: string,
+  fullName: string
+}
 
-// const Chat = ({ userId, userAvatar, username }: ChatProps) => {
-//   const [message, setMessage] = useState("");
-//   const [messages, setMessages] = useState<Message[]>([]);
-//   const { receiverId } = useParams();
-//   const [user, setUser] = useState<any>({});
-//   const apiUrl = import.meta.env.VITE_API_URL;
-//   const socket: Socket | null = getSocket();
-//   const messagesEndRef = useRef(null);
-
-//   // Fetch user details of the person being chatted with
-//   const fetchUserDetails = async () => {
-//     try {
-//       const response = await axios.get(`${apiUrl}/users/getuserbyId/${receiverId}`);
-//       setUser(response.data.data.user);
-//     } catch (error) {
-//       console.error("Failed to fetch user details:", error);
-//     }
-//   };
-
-//   // Fetch messages between the current user and the receiver
-//   const fetchMessages = async () => {
-//     try {
-//       const response = await axios.get(`${apiUrl}/api/v1/message/get/${receiverId}`);
-//       setMessages(response.data.messages);
-//     } catch (error) {
-//       console.error("Failed to fetch messages:", error);
-//     }
-//   };
-
-//   // Send a message
-//   const sendMessage = async () => {
-//     if (!message.trim()) return;
-
-//     try {
-//       const response = await axios.post(`${apiUrl}/api/v1/message/send/${receiverId}`, {
-//         message,
-//       });
-//       const newMessage = response.data.message;
-//       setMessages((prevMessages) => [...prevMessages, newMessage]);
-//       setMessage(""); // Clear input field
-//       socket?.emit("message", newMessage); // Emit message to socket for real-time update
-//     } catch (error) {
-//       console.error("Failed to send message:", error);
-//     }
-//   };
-
-//   // Scroll to the latest message when messages update
-//   useEffect(() => {
-//     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
-//   }, [messages]);
-
-//   // Socket connection for receiving real-time messages
-//   useEffect(() => {
-//     socket?.on("received-message", (newMessage: Message) => {
-//       setMessages((prevMessages) => [...prevMessages, newMessage]);
-//     });
-
-//     return () => {
-//       socket?.off("received-message");
-//     };
-//   }, [socket]);
-
-//   // Initial data fetching
-//   useEffect(() => {
-//     fetchUserDetails();
-//     fetchMessages();
-//   }, [receiverId]);
-
-//   return (
-//     <div className="flex">
-//       <div className="w-96 border-r h-screen border-gray-500 border-opacity-40 overflow-x-hidden overflow-y-auto">
-//         <div className="flex ml-7 mr-5 mt-10 mb-5 justify-between text-white font-sans font-semibold">
-//           <div className="text-xl font-bold">{username}</div>
-//           <div><PiNotePencilDuotone size={30} /></div>
-//         </div>
-//         {/* Display user list */}
-//         {/* User and chat layout here */}
-//       </div>
-
-//       <div className="text-white flex-grow">
-//         <div className="chat-container">
-//           <div className="border-b flex justify-between border-gray-500 border-opacity-40">
-//             <div className="flex mb-4 ml-4 text-white items-center">
-//               <img src={user.avatar} className="rounded-full border border-gray-600 cursor-pointer w-12 h-12" alt="" />
-//               <div className="flex ml-3 flex-col">
-//                 <p className="font-sans mt-2 font-semibold tracking-wide">{user.fullName}</p>
-//               </div>
-//             </div>
-//             <div className="flex items-center space-x-3 mr-3 justify-end">
-//               <IoCallOutline className="cursor-pointer" size={30} />
-//               <IoVideocamOutline className="cursor-pointer" size={30} />
-//               <RxInfoCircled className="cursor-pointer" size={28} />
-//             </div>
-//           </div>
-
-//           {/* Message display */}
-//           <div style={{ height: "77vh" }} className="mt-3 overflow-y-auto ml-4">
-//             {messages.map((msg) => (
-//               <MessageBubble
-//                 key={msg._id}
-//                 sentAt={msg.createdAt}
-//                 message={msg.message}
-//                 isSender={msg.senderId === userId}
-//                 receiverAvatar={user.avatar}
-//                 userAvatar={userAvatar}
-//               />
-//             ))}
-//             <div ref={messagesEndRef} />
-//           </div>
-
-//           {/* Input field for new messages */}
-//           <div className="fixed flex space-x-2 bottom-5 mx-3">
-//             <div className="absolute flex items-center border border-gray-400 border-opacity-40 rounded-full bottom-0">
-//               <input
-//                 type="text"
-//                 value={message}
-//                 onChange={(e) => setMessage(e.target.value)}
-//                 onKeyDown={(e) => e.key === "Enter" && sendMessage()}
-//                 style={{ width: "53.5vw", color: "white" }}
-//                 className="bg-black ml-3 h-9 text-white placeholder:text-gray-500 focus:outline-none"
-//                 placeholder="Message..."
-//               />
-//               <p
-//                 onClick={sendMessage}
-//                 className={`${
-//                   !message ? "text-gray-500" : "text-blue-500 font-semibold"
-//                 } ml-3 mr-5 cursor-pointer`}
-//               >
-//                 Post
-//               </p>
-//             </div>
-//           </div>
-//         </div>
-//       </div>
-//     </div>
-//   );
-// };
-
-
-
+interface User {
+  _id: string,
+  username: string,
+  avatar: string,
+  fullName: string
+}
 
 
 const Chat = ({ userId, userAvatar, username }: ChatProps) => {
   const [message, setMessage] = useState("");
   const [messages, setMessages] = useState<Message[]>([]);
   const { receiverId } = useParams();
-  const [user, setUser] = useState({})
+  const [user, setUser] = useState<User | null>(null);
   const [socket, setSocket] = useState<Socket | null>(null);
-  const [onlineUsers , setOnlineUsers] = useState([])
+  const [onlineUsers , setOnlineUsers] = useState<string[]>([])
 
   useEffect(() => {
     if (userId) {
@@ -203,9 +75,9 @@ const Chat = ({ userId, userAvatar, username }: ChatProps) => {
   }
 
   const apiUrl = import.meta.env.VITE_API_URL;
-  const [allUser, setAllUser] = useState([]);
+  const [allUser, setAllUser] = useState<Item[]>([]);
 
-  const fileterMe = allUser.filter((item)=> item._id !== userId)
+  const fileterMe: Item[] = allUser.filter((item)=> item._id !== userId)
 
   useEffect(() => {
     getAlluser();
@@ -275,13 +147,13 @@ const Chat = ({ userId, userAvatar, username }: ChatProps) => {
     }
   };
 
-  const messagesEndRef = useRef(null);
+  const messagesEndRef = useRef<HTMLDivElement | null>(null);
 
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages]);
 
-  const handleKeyDown = (event) => {
+  const handleKeyDown = (event: React.KeyboardEvent<HTMLInputElement>) => {
     if (event.key === 'Enter') {
       event.preventDefault(); // Prevents any unintended behavior from Enter key
       sendMessage(); // Call sendMessage when Enter is pressed
@@ -343,17 +215,17 @@ const Chat = ({ userId, userAvatar, username }: ChatProps) => {
             <div className="border-b flex justify-between border-gray-500 border-opacity-40">
           <div className="flex mb-4 ml-4 text-white items-center">
                 <div className="cursor-pointer mt-3">
-                  <Link to={`/user/${user._id}`}>
+                  <Link to={`/user/${user?._id}`}>
                   <img
-                    src={user.avatar}
+                    src={user?.avatar}
                     className="rounded-full border border-gray-600 cursor-pointer w-12 h-12"
                     alt=""
                   />
                   </Link>
                 </div>
                 <div className="flex ml-3 flex-col">
-                  <Link to={`/user/${user._id}`}>
-                  <p className="font-sans mt-2 font-semibold tracking-wide">{user.fullName}</p>
+                  <Link to={`/user/${user?._id}`}>
+                  <p className="font-sans mt-2 font-semibold tracking-wide">{user?.fullName}</p>
                   </Link>
                 </div>
               </div>
@@ -367,13 +239,13 @@ const Chat = ({ userId, userAvatar, username }: ChatProps) => {
           <div style={{height:"77vh"}} className="mt-3 overflow-y-auto ml-4">
             <div className="flex flex-col w-full mt-5 items-center">
             <div className="">
-            <Link to={`/user/${user._id}`}>
-            <img src={user.avatar} className="rounded-full border border-gray-600 cursor-pointer w-24 h-24" alt="" />
+            <Link to={`/user/${user?._id}`}>
+            <img src={user?.avatar} className="rounded-full border border-gray-600 cursor-pointer w-24 h-24" alt="" />
             </Link>
           </div>
-            <p className=" text-xl font-sans font-semibold mt-1">{user.fullName}</p>
-            <div className="text-sm mt-1 flex text-gray-400 opacity-65"><p>{user.username}</p><RxDotFilled size={10} className="text-gray-100 mt-2 opacity-60" /><p>Vibely</p></div>
-            <Link to={`/user/${user._id}`}>
+            <p className=" text-xl font-sans font-semibold mt-1">{user?.fullName}</p>
+            <div className="text-sm mt-1 flex text-gray-400 opacity-65"><p>{user?.username}</p><RxDotFilled size={10} className="text-gray-100 mt-2 opacity-60" /><p>Vibely</p></div>
+            <Link to={`/user/${user?._id}`}>
             <Button size={'sm'} style={{background:'#262626'}} className="cursor-pointer mt-4">View profile</Button>
             </Link>
             </div>
@@ -383,7 +255,7 @@ const Chat = ({ userId, userAvatar, username }: ChatProps) => {
           sentAt={msg.createdAt}
           message={msg.message}           // Pass message text as a prop
           isSender={msg.senderId === userId}
-          receiverAvatar={user.avatar}
+          receiverAvatar={user?.avatar}
           userAvatar={userAvatar}
         />
       ))}
