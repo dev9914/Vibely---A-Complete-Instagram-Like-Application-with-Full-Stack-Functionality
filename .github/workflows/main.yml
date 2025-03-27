@@ -31,9 +31,9 @@ jobs:
       - name: Update K8s Manifests and Deploy
         run: |
           aws eks update-kubeconfig --region ${{ secrets.AWS_REGION }} --name ${{ secrets.EKS_CLUSTER_NAME }}
-          kubectl apply -f backend/deployment.yaml
-          kubectl apply -f backend/service.yaml
-          kubectl apply -f frontend/deployment.yaml
-          kubectl apply -f frontend/service.yaml
+          kubectl apply -f backend/backend-deployment.yaml
+          kubectl apply -f backend/backend-service.yaml
+          kubectl apply -f frontend/frontend-deployment.yaml
+          kubectl apply -f frontend/frontend-service.yaml
           kubectl rollout restart deployment backend
           kubectl rollout restart deployment frontend
