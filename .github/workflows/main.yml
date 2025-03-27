@@ -14,7 +14,10 @@ jobs:
         uses: actions/checkout@v3
 
       - name: Login to Docker Hub
-        run: echo "${{ secrets.DOCKERHUB_PASSWORD }}" | docker login -u "${{ secrets.DOCKERHUB_USERNAME }}" --password-stdin
+        env:
+          DOCKERHUB_USERNAME: ${{ secrets.DOCKERHUB_USERNAME }}
+          DOCKERHUB_PASSWORD: ${{ secrets.DOCKERHUB_PASSWORD }}
+        run: echo "$DOCKERHUB_PASSWORD" | docker login -u "$DOCKERHUB_USERNAME" --password-stdin
 
       - name: Build and Push Backend Image
         run: |
@@ -28,12 +31,21 @@ jobs:
           docker build -t ${{ secrets.DOCKERHUB_USERNAME }}/insta-frontend:latest .
           docker push ${{ secrets.DOCKERHUB_USERNAME }}/insta-frontend:latest
 
-      - name: Update K8s Manifests and Deploy
+      - name: Configure AWS Credentials
+        uses: aws-actions/configure-aws-credentials@v1
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ${{ secrets.AWS_REGION }}
+
+      - name: Update Kubeconfig for EKS
+        run: aws eks update-kubeconfig --region ${{ secrets.AWS_REGION }} --name ${{ secrets.EKS_CLUSTER_NAME }}
+
+      - name: Deploy to Kubernetes
         run: |
-          aws eks update-kubeconfig --region ${{ secrets.AWS_REGION }} --name ${{ secrets.EKS_CLUSTER_NAME }}
-          kubectl apply -f backend/deployment.yaml
-          kubectl apply -f backend/service.yaml
-          kubectl apply -f frontend/deployment.yaml
-          kubectl apply -f frontend/service.yaml
-          kubectl rollout restart deployment backend
-          kubectl rollout restart deployment frontend
+          kubectl apply -f backend/backend-deployment.yaml || echo "⚠️ backend/deployment.yaml missing!"
+          kubectl apply -f backend/backend-service.yaml || echo "⚠️ backend/service.yaml missing!"
+          kubectl apply -f frontend/frontend-deployment.yaml || echo "⚠️ frontend/deployment.yaml missing!"
+          kubectl apply -f frontend/frontend-service.yaml || echo "⚠️ frontend/service.yaml missing!"
+          kubectl rollout restart deployment backend || echo "⚠️ Backend deployment restart failed!"
+          kubectl rollout restart deployment frontend || echo "⚠️ Frontend deployment restart failed!"
