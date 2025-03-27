@@ -4,16 +4,10 @@ import cookieParser from 'cookie-parser';
 
 const app = express();
 
-  
-  // app.use(cors({
-  //   origin: ['https://trendify-made-because-of-job-project-1.onrender.com', 'https://trendify-made-because-of-job-project.onrender.com',],
-  //   methods:['GET,PATCH,POST,DELETE,PUT'],
-  //   credentials: true,
-  // }
-  // ));
+
 
   app.use(cors({
-    origin: ['http://localhost:4000','https://vibely-social-media-app-frontend.onrender.com'],
+    origin: ['http://localhost:4000','http://af2117f7ba1494a31a496cf6224629ef-1329152546.us-east-1.elb.amazonaws.com'],
     credentials: true
 }))
 
