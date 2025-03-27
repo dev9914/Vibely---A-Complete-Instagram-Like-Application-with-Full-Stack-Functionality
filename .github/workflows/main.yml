@@ -1,4 +1,4 @@
-name: CI/CD Workflow
+name: Deploy to AWS EKS
 
 on:
   push:
@@ -6,28 +6,46 @@ on:
       - main
 
 jobs:
-  build:
+  deploy:
     runs-on: ubuntu-latest
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v2
 
-      - name: Check AWS CLI Version
-        run: aws --version
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v3
+
+      - name: Login to Docker Hub
+        env:
+          DOCKERHUB_USERNAME: ${{ secrets.DOCKERHUB_USERNAME }}
+          DOCKERHUB_PASSWORD: ${{ secrets.DOCKERHUB_PASSWORD }}
+        run: echo "$DOCKERHUB_PASSWORD" | docker login -u "$DOCKERHUB_USERNAME" --password-stdin
+
+      - name: Build and Push Backend Image
+        run: |
+          cd backend
+          docker build -t ${{ secrets.DOCKERHUB_USERNAME }}/insta-backend:latest .
+          docker push ${{ secrets.DOCKERHUB_USERNAME }}/insta-backend:latest
+
+      - name: Build and Push Frontend Image
+        run: |
+          cd frontend
+          docker build -t ${{ secrets.DOCKERHUB_USERNAME }}/insta-frontend:latest .
+          docker push ${{ secrets.DOCKERHUB_USERNAME }}/insta-frontend:latest
 
       - name: Configure AWS Credentials
         uses: aws-actions/configure-aws-credentials@v1
         with:
           aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
           aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-          aws-region: us-east-1  # Change to your AWS region
+          aws-region: ${{ secrets.AWS_REGION }}
 
-      - name: Print Environment Variables
-        run: |
-          echo "AWS_REGION: ${{ secrets.AWS_REGION }}"
-          echo "EKS_CLUSTER_NAME: insta-clone-cluster"
+      - name: Update Kubeconfig for EKS
+        run: aws eks update-kubeconfig --region ${{ secrets.AWS_REGION }} --name ${{ secrets.EKS_CLUSTER_NAME }}
 
-      - name: Test AWS EKS Credentials
+      - name: Deploy to Kubernetes
         run: |
-          aws eks list-clusters --region us-east-1
-          aws eks update-kubeconfig --region us-east-1 --name insta-clone-cluster --debug
+          kubectl apply -f backend/backend-deployment.yaml || echo "⚠️ backend/deployment.yaml missing!"
+          kubectl apply -f backend/backend-service.yaml || echo "⚠️ backend/service.yaml missing!"
+          kubectl apply -f frontend/frontend-deployment.yaml || echo "⚠️ frontend/deployment.yaml missing!"
+          kubectl apply -f frontend/frontend-service.yaml || echo "⚠️ frontend/service.yaml missing!"
+          kubectl rollout restart deployment backend || echo "⚠️ Backend deployment restart failed!"
+          kubectl rollout restart deployment frontend || echo "⚠️ Frontend deployment restart failed!"
