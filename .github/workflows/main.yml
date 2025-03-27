@@ -14,3 +14,8 @@ jobs:
 
       - name: Check AWS CLI Version
         run: aws --version
+
+      - name: Print Environment Variables
+        run: |
+          echo "AWS_REGION: ${{ secrets.AWS_REGION }}"
+          echo "EKS_CLUSTER_NAME: ${{ secrets.AWS_CLUSTER_NAME}}
