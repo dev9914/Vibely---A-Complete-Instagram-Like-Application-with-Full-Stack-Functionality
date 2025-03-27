@@ -30,7 +30,7 @@ jobs:
 
       - name: Update K8s Manifests and Deploy
         run: |
-          aws eks update-kubeconfig --region ${{ secrets.AWS_REGION }} --name ${{ secrets.EKS_CLUSTER_NAME }}
+          aws eks update-kubeconfig --region ${{ secrets.AWS_REGION }} --name insta-clone-cluster
           kubectl apply -f backend/backend-deployment.yaml
           kubectl apply -f backend/backend-service.yaml
           kubectl apply -f frontend/frontend-deployment.yaml
