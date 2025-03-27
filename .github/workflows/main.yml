@@ -1,0 +1,39 @@
+name: Deploy to AWS EKS
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v3
+
+      - name: Login to Docker Hub
+        run: echo "${{ secrets.DOCKERHUB_PASSWORD }}" | docker login -u "${{ secrets.DOCKERHUB_USERNAME }}" --password-stdin
+
+      - name: Build and Push Backend Image
+        run: |
+          cd backend
+          docker build -t ${{ secrets.DOCKERHUB_USERNAME }}/insta-backend:latest .
+          docker push ${{ secrets.DOCKERHUB_USERNAME }}/insta-backend:latest
+
+      - name: Build and Push Frontend Image
+        run: |
+          cd frontend
+          docker build -t ${{ secrets.DOCKERHUB_USERNAME }}/insta-frontend:latest .
+          docker push ${{ secrets.DOCKERHUB_USERNAME }}/insta-frontend:latest
+
+      - name: Update K8s Manifests and Deploy
+        run: |
+          aws eks update-kubeconfig --region ${{ secrets.AWS_REGION }} --name ${{ secrets.EKS_CLUSTER_NAME }}
+          kubectl apply -f backend/deployment.yaml
+          kubectl apply -f backend/service.yaml
+          kubectl apply -f frontend/deployment.yaml
+          kubectl apply -f frontend/service.yaml
+          kubectl rollout restart deployment backend
+          kubectl rollout restart deployment frontend
