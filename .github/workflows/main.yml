@@ -39,7 +39,7 @@ jobs:
           aws-region: ${{ secrets.AWS_REGION }}
 
       - name: Update Kubeconfig for EKS
-        run: aws eks update-kubeconfig --region us-east-1 --name insta-clone-cluster
+        run: aws eks update-kubeconfig ${{ secrets.AWS_REGION }} --name ${{ secrets.EKS_CLUSTER_NAME }}
 
       - name: Deploy to Kubernetes
         run: |
