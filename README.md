@@ -74,9 +74,6 @@ docker-compose up --build
 kubectl apply -f k8s/
 ```
 
-## 📸 Screenshots
-(Add some UI screenshots of your project here)
-
 ## 📌 Future Improvements
 - Add **AI-powered features**
 - Implement **Story Feature**
