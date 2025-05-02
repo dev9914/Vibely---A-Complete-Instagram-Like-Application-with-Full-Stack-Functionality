@@ -1,29 +1,29 @@
-apiVersion: apps/v1
-kind: Deployment
-metadata:
-  name: frontend
-spec:
-  replicas: 2
-  selector:
-    matchLabels:
-      app: frontend
-  template:
-    metadata:
-      labels:
-        app: frontend
-    spec:
-      containers:
-        - name: frontend
-          image: 991499/instagram-frontend:latest
-          ports:
-            - containerPort: 80
-          env:
-            - name: VITE_API_URL
-              value: "http://a030f9c8ed7164913a8b23d156733b46-1953213823.us-east-1.elb.amazonaws.com:5000/api/v1"
-          resources:
-            requests:
-              cpu: "100m"
-              memory: "128Mi"
-            limits:
-              cpu: "500m"
-              memory: "256Mi"
+# apiVersion: apps/v1
+# kind: Deployment
+# metadata:
+#   name: frontend
+# spec:
+#   replicas: 2
+#   selector:
+#     matchLabels:
+#       app: frontend
+#   template:
+#     metadata:
+#       labels:
+#         app: frontend
+#     spec:
+#       containers:
+#         - name: frontend
+#           image: 991499/instagram-frontend:latest
+#           ports:
+#             - containerPort: 80
+#           env:
+#             - name: VITE_API_URL
+#               value: "http://a030f9c8ed7164913a8b23d156733b46-1953213823.us-east-1.elb.amazonaws.com:5000/api/v1"
+#           resources:
+#             requests:
+#               cpu: "100m"
+#               memory: "128Mi"
+#             limits:
+#               cpu: "500m"
+#               memory: "256Mi"

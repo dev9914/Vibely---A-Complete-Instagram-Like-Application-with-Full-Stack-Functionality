@@ -14,7 +14,7 @@ import { SkeletonDemo } from "../components/UserSkeleton"
 
 
 const Home = ({user}) => {
-  const [AllPosts,setAllPosts] = useState([])
+  const [allPosts,setAllPosts] = useState([])
   const apiUrl = import.meta.env.VITE_API_URL;
   const [allUser, setAllUser] = useState([])
   const [seeAll, setSeeAll] = useState(false)
@@ -22,6 +22,11 @@ const Home = ({user}) => {
   const commentSt = useSelector((state: RootState)=> state.comment.status)
   const [comments, setComment] = useState([])
   const [commentText, setCommentText] = useState('')
+
+  const [page, setPage] = useState(1); // Start at page 1
+  const [loading, setLoading] = useState(false); // Loading state
+  const [hasMore, setHasMore] = useState(true); // To track if there are more posts
+
 
   const dispatch = useDispatch()
 
@@ -31,6 +36,8 @@ const Home = ({user}) => {
 
 
   const only7user = allUser.slice(0,7).filter((item)=> item._id !== user._id)
+
+
 
   useEffect(()=>{
     getAllPosts()
@@ -48,18 +55,46 @@ const Home = ({user}) => {
     };
   },[createpost, commentSt])
 
+  useEffect(() => {
+    const handleScroll = () => {
+      if (
+        window.innerHeight + window.scrollY >= document.body.scrollHeight - 10 &&
+        hasMore &&
+        !loading
+      ) {
+        console.log('At bottom → fetching more posts...');
+        getAllPosts();
+      }
+    };
+  
+    window.addEventListener('scroll', handleScroll);
+  
+    return () => {
+      window.removeEventListener('scroll', handleScroll);
+    };
+  }, [hasMore, loading, page]);
+  
 
-  const getAllPosts = async ()=>{
+
+  const getAllPosts = async () => {
     try {
-      const response = await axios.get(`${apiUrl}/post/getallpost`)
-
-
-      // console.log(response.data.data.post)
-      setAllPosts(response.data.data.post)
+      setLoading(true);
+      const response = await axios.get(`${apiUrl}/post/getallpost?page=${page}`);
+      const newPosts = response.data.data.post;
+  
+      setAllPosts((prevPosts) => [...prevPosts, ...newPosts]);
+  
+      if (newPosts.length < 10) {
+        setHasMore(false); // No more posts to fetch
+      }
+  
+      setPage((prevPage) => prevPage + 1); // Increment page only once after success
     } catch (error) {
-    console.log(error)
+      console.log(error);
+    } finally {
+      setLoading(false);
     }
-  }
+  };
 
   const getAlluser = async ()=>{
     try {
@@ -228,34 +263,56 @@ zIndex: 1,
     </div>
   </div>
 )}
-      <div className="bg-black w-5/12">
+      <div id="post-container" className="bg-black w-5/12">
         <div className="flex space-x-5 mt-8">
-          {only7user.map((item)=>(<>
-          <div key={item._id} className="">
+          {only7user.map((item,index)=>(
+          <div key={index} className="">
             <Link to={`/user/${item._id}`}>
             <img src={item.avatar} className="rounded-full border border-gray-600 cursor-pointer w-14 h-14" alt="" />
             <p className="ml-1 text-xs mt-1 text-gray-400">{item.username.slice(0,7)} {item.username.length > 8 ? '...' : ''}</p>
             </Link>
           </div>
-            </>
+            
           ))}
         </div>
-        <div className="mt-8 h-auto ">
-          {AllPosts.length === 0 ? (
-            <>
+        <div className="mt-8 h-auto">
+        {allPosts.length === 0 && loading ? (
+          // Display skeleton loaders when posts are being fetched
+          <>
             <div className="mb-10">
-            <SkeletonCard/>
+              <SkeletonCard />
             </div>
-            <SkeletonCard/>
-            </>
-          ): (
-            AllPosts.map((item)=>(
-              <div onMouseEnter={()=> setPostId(item._id)} key={item._id}>
-                <Post CommentButton={handleComment} postId={item._id} key={item._id || Math.random()} userId={item.userId} likecount={item.likecount || 0} postImage={item.postImage} description={item.description} commentcount={item.commentcount} created={item.createdAt} />
-              </div>
-            ))
-          )}
-        </div>
+            <SkeletonCard />
+          </>
+        ) : (
+          allPosts.map((item) => (
+            <div onMouseEnter={() => setPostId(item._id)} key={item._id}>
+              <Post
+                CommentButton={handleComment}
+                postId={item._id}
+                userId={item.userId}
+                likecount={item.likecount || 0}
+                postImage={item.postImage}
+                description={item.description}
+                commentcount={item.commentcount}
+                created={item.createdAt}
+              />
+            </div>
+          ))
+        )}
+
+        {loading && hasMore && ( // Show loading spinner if there are more posts to load
+          <div className="text-center mt-4">
+            <SkeletonCard /> {/* Or you can show a spinner here */}
+          </div>
+        )}
+
+        {!hasMore && (
+          <div className="text-center mt-4">
+            <p>No more posts to load</p> {/* Inform the user when there are no more posts */}
+          </div>
+        )}
+      </div>
       </div>
       <div className="mt-8 text-white w-5/12">
         <div className="ml-28 mr-12">

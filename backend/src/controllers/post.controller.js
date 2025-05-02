@@ -90,15 +90,34 @@ const addComment = asyncHandler( async(req, res) =>{
     return res.status(201).json(new ApiResponse(201, {updatedpost},"comment added successfully"))
 })
 
-const getPost = asyncHandler( async(req, res) => {
-    const post = await Post.find().sort({ createdAt: -1 });
+const getPost = asyncHandler(async (req, res) => {
+    // Extract page and limit from query params
+    const page = parseInt(req.query.page) || 1;  // Default to page 1
+    const limit = parseInt(req.query.limit) || 10;  // Default to 10 posts per page
 
-    if(!post){
-        res.status(500).json(new ApiResponse(500, {}, "no post available yet!"))
+    // Calculate the number of posts to skip based on the page and limit
+    const skip = (page - 1) * limit;
+
+    try {
+        // Fetch posts with pagination and sorting by 'createdAt' descending
+        const post = await Post.find()
+            .sort({ createdAt: -1 })  // Ensure most recent posts are fetched first
+            .skip(skip)               // Skip the appropriate number of posts
+            .limit(limit);            // Limit the results to the requested number
+
+        // If no posts are found
+        if (!post.length) {
+            return res.status(404).json(new ApiResponse(404, {}, "No posts available."));
+        }
+
+        // Send the paginated posts response
+        res.status(200).json(new ApiResponse(200, { post }, "All posts fetched successfully"));
+    } catch (error) {
+        console.error(error);
+        res.status(500).json(new ApiResponse(500, {}, "Error fetching posts"));
     }
+});
 
-    res.status(201).json(new ApiResponse(201,{post},"all post fetched successfully"))
-})
 
 const checkIfLiked = asyncHandler(async (req, res) => {
     const { postId } = req.params;
