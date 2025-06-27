@@ -11,6 +11,7 @@ const CreatePost = () => {
             height: '100%',
             backgroundColor: 'rgba(0, 0, 0, 0.5)', // Semi-transparent background
             zIndex: 100,
+            display: 'flex'
           }} className='flex justify-center items-center'>
             <CardWithForm />
           </div>
