@@ -20,14 +20,19 @@ const withTimeout = (promise, timeoutMs, label) =>
 const getBullMQConnection = () => {
   if (!redisConnection) {
     redisConnection = new IORedis(
-      process.env.REDIS_URL || "redis://localhost:6379",
-      {
-        maxRetriesPerRequest: null,
-        enableReadyCheck: true,
-        lazyConnect: true,
-        retryStrategy: (attempt) => Math.min(attempt * 200, 2000),
-      }
-    );
+  process.env.REDIS_URL || "redis://localhost:6379",
+  {
+    maxRetriesPerRequest: null,
+    enableReadyCheck: true,
+    lazyConnect: true,
+
+    tls: process.env.REDIS_URL?.startsWith("rediss://")
+      ? {}
+      : undefined,
+
+    retryStrategy: (attempt) => Math.min(attempt * 200, 2000),
+  }
+);
   }
 
   if (!handlersAttached) {

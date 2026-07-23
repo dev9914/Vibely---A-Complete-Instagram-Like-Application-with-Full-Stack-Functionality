@@ -1,37 +1,30 @@
 import { createClient } from "redis";
 import "../src/config/env.js";
 
-let redisClient = null;
-let eventHandlersAttached = false;
+let redisClient;
 
-const getRedisClient = () => {
+export const getRedisClient = () => {
   if (!redisClient) {
     redisClient = createClient({
       url: process.env.REDIS_URL || "redis://localhost:6379",
-      socket: {
-        reconnectStrategy: (retries) => Math.min(retries * 100, 3000),
-      },
-    });
-  }
-
-  if (!eventHandlersAttached) {
-    redisClient.on("connect", () => {
-      console.log("✓ Redis connected");
+      socket: process.env.REDIS_URL?.startsWith("rediss://")
+        ? {
+            tls: true,
+          }
+        : undefined,
     });
 
     redisClient.on("ready", () => {
       console.log("✓ Redis ready");
     });
 
-    redisClient.on("reconnecting", () => {
-      console.warn("⚠️ Redis reconnecting");
-    });
-
     redisClient.on("error", (err) => {
-      console.error("❌ Redis error:", err);
+      console.error("❌ Redis error:", err.message);
     });
 
-    eventHandlersAttached = true;
+    redisClient.on("reconnecting", () => {
+      console.warn("⚠ Redis reconnecting...");
+    });
   }
 
   return redisClient;
@@ -39,19 +32,22 @@ const getRedisClient = () => {
 
 export const connectRedis = async () => {
   const client = getRedisClient();
-  if (!client.isOpen) {
-    await client.connect();
+
+  if (client.isOpen) {
+    return client;
   }
+
+  await client.connect();
+
   return client;
 };
 
 export const disconnectRedis = async () => {
   const client = getRedisClient();
+
   if (client.isOpen) {
     await client.quit();
-    console.log("✓ Redis disconnected");
   }
 };
 
-export { getRedisClient };
-export default getRedisClient();
+export default getRedisClient;

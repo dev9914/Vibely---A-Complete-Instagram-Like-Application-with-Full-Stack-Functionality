@@ -1,26 +1,9 @@
-import '../config/env.js';
+import "../config/env.js";
 
-import connectDb, { disconnectDb } from '../db/DbConnect.js';
-import { connectRedis, disconnectRedis } from '../../config/redis.js';
-import { connectBullMQ, disconnectBullMQ } from '../../config/bullmq.js';
-import { initializeFirebaseAdmin } from '../utils/firebaseAdmin.js';
-
-const buildSteps = ({ enableBullMQ = true, enableFirebase = true } = {}) => {
-  const steps = [
-    { label: 'MongoDB', action: () => connectDb() },
-    { label: 'Redis', action: () => connectRedis() },
-  ];
-
-  if (enableBullMQ) {
-    steps.push({ label: 'BullMQ Redis', action: () => connectBullMQ() });
-  }
-
-  if (enableFirebase) {
-    steps.push({ label: 'Firebase', action: () => initializeFirebaseAdmin() });
-  }
-
-  return steps;
-};
+import connectDb, { disconnectDb } from "../db/DbConnect.js";
+import { connectRedis, disconnectRedis } from "../../config/redis.js";
+import { connectBullMQ, disconnectBullMQ } from "../../config/bullmq.js";
+import { initializeFirebaseAdmin } from "../utils/firebaseAdmin.js";
 
 export const initializeRuntime = async (
   role,
@@ -28,12 +11,51 @@ export const initializeRuntime = async (
 ) => {
   console.log(`▶ Starting ${role} runtime`);
 
-  for (const step of buildSteps({ enableBullMQ, enableFirebase })) {
+  // ==========================
+  // MongoDB (Required)
+  // ==========================
+  try {
+    await connectDb();
+    console.log("✓ MongoDB connected");
+  } catch (err) {
+    console.error("❌ MongoDB connection failed");
+    throw err;
+  }
+
+  // ==========================
+  // Redis (Optional)
+  // ==========================
+  let redisAvailable = false;
+
+  try {
+    await connectRedis();
+    redisAvailable = true;
+    console.log("✓ Redis connected");
+  } catch (err) {
+    console.warn("⚠ Redis unavailable. Queue features disabled.");
+  }
+
+  // ==========================
+  // BullMQ (Optional)
+  // ==========================
+  if (enableBullMQ && redisAvailable) {
     try {
-      await step.action();
-    } catch (error) {
-      console.error(`❌ ${role} failed while initializing ${step.label}:`, error?.stack || error);
-      throw error;
+      await connectBullMQ();
+      console.log("✓ BullMQ connected");
+    } catch (err) {
+      console.warn("⚠ BullMQ unavailable.");
+    }
+  }
+
+  // ==========================
+  // Firebase (Optional)
+  // ==========================
+  if (enableFirebase) {
+    try {
+      await initializeFirebaseAdmin();
+      console.log("✓ Firebase initialized");
+    } catch (err) {
+      console.warn("⚠ Firebase initialization failed.");
     }
   }
 
@@ -41,7 +63,7 @@ export const initializeRuntime = async (
 };
 
 export const shutdownRuntime = async (role) => {
-  console.log(`⚠️ Shutting down ${role} runtime`);
+  console.log(`⚠ Shutting down ${role} runtime`);
 
   await Promise.allSettled([
     disconnectBullMQ(),

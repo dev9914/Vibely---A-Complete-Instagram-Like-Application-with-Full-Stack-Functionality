@@ -5,50 +5,70 @@ const notificationQueueName = "notifications";
 
 let notificationQueue = null;
 
-const queueOptions = {
-  connection: getBullMQConnection(),
-  defaultJobOptions: {
-    attempts: 5,
-    backoff: {
-      type: "exponential",
-      delay: 2000,
-    },
-    removeOnComplete: {
-      age: 3600,
-      count: 500,
-    },
-    removeOnFail: {
-      age: 86400,
-      count: 1000,
-    },
-  },
-};
-
-export const getNotificationQueue = () => {
+const getQueue = () => {
   if (!notificationQueue) {
-    notificationQueue = new Queue(notificationQueueName, queueOptions);
+    notificationQueue = new Queue(notificationQueueName, {
+      connection: getBullMQConnection(),
+      defaultJobOptions: {
+        attempts: 5,
+        backoff: {
+          type: "exponential",
+          delay: 2000,
+        },
+        removeOnComplete: {
+          age: 3600,
+          count: 500,
+        },
+        removeOnFail: {
+          age: 86400,
+          count: 1000,
+        },
+      },
+    });
+
+    notificationQueue.on("error", (err) => {
+      console.warn("⚠ Notification Queue Error:", err.message);
+    });
   }
 
   return notificationQueue;
 };
 
-export const enqueueNotificationJob = async (userId, notification, jobOptions = {}) => {
-  const queue = getNotificationQueue();
+export const getNotificationQueue = () => getQueue();
 
-  const job = await queue.add(
-    "send-notification",
-    { userId, notification },
-    jobOptions,
-  );
+export const enqueueNotificationJob = async (
+  userId,
+  notification,
+  jobOptions = {}
+) => {
+  try {
+    const queue = getQueue();
 
-  console.log("✓ Notification job queued", {
-    queue: notificationQueueName,
-    jobId: job.id,
-    userId,
-    type: notification?.type,
-  });
+    const job = await queue.add(
+      "send-notification",
+      {
+        userId,
+        notification,
+      },
+      jobOptions
+    );
 
-  return job;
+    console.log("✓ Notification job queued", {
+      queue: notificationQueueName,
+      jobId: job.id,
+      userId,
+      type: notification?.type,
+    });
+
+    return job;
+  } catch (err) {
+    console.warn(
+      "⚠ Notification queue unavailable. Skipping notification.",
+      err.message
+    );
+
+    return null;
+  }
 };
 
 export { notificationQueue };

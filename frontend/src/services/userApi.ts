@@ -358,10 +358,6 @@ updateCoverImage: builder.mutation<UserResponse, FormData>({
         url: '/users/logout',
         method: 'POST',
       }),
-      async onQueryStarted(_, { dispatch }) {
-        // Clear all caches on logout
-        dispatch(api.util.resetApiState());
-      },
     }),
   }),
 });

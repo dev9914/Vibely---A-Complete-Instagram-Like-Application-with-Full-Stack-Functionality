@@ -32,7 +32,9 @@ const validateJobData = (jobData) => {
 
 async function startWorker() {
   try {
-    await initializeRuntime("notification-worker");
+    await initializeRuntime("notification-worker", {
+    enableBullMQ: false,
+});
 
     console.log("✓ Worker started");
 

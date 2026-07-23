@@ -33,13 +33,10 @@ import {
   } from "./ui/dropdown-menu"
 
   import { Link } from "react-router-dom"
+  import { useLogout } from "@/hooks/useLogout"
    
   export function DropdownMenuDemo() {
-    const logout = () => {
-      localStorage.removeItem("token");
-      // localStorage.removeItem("tokenExpiry")
-      window.location.href = "/signin"; // Redirect to login page
-    };
+    const { logout, isLoading: isLoggingOut } = useLogout();
     return (
       <DropdownMenu>
         <DropdownMenuTrigger asChild>
@@ -121,13 +118,11 @@ import {
             <span>API</span>
           </DropdownMenuItem>
           <DropdownMenuSeparator />
-          <div onClick={()=> logout()}>
-          <DropdownMenuItem>
+          <DropdownMenuItem disabled={isLoggingOut} onClick={() => logout()}>
             <LogOut />
-            <span>Log out</span>
+            <span>{isLoggingOut ? "Logging out..." : "Log out"}</span>
             <DropdownMenuShortcut>⇧⌘Q</DropdownMenuShortcut>
           </DropdownMenuItem>
-          </div>
         </DropdownMenuContent>
       </DropdownMenu>
     )

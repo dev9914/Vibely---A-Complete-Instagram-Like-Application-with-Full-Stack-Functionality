@@ -37,6 +37,7 @@ import {
 import NotificationPanel from '@/components/notifications/NotificationPanel'
 import { useGetNotificationsQuery } from '@/services/notificationApi'
 import { openCreatePostModal } from '@/store/uiSlice'
+import { useLogout } from '@/hooks/useLogout'
 
 interface SidebarProps {
   user: {
@@ -60,6 +61,7 @@ interface NavItem {
 const Sidebar = ({ user, collapsed = false, onCollapsedChange }: SidebarProps) => {
   const location = useLocation()
   const dispatch = useDispatch()
+  const { logout, isLoading: isLoggingOut } = useLogout()
   const [isHovered, setIsHovered] = useState(false)
   const [isDropdownOpen, setIsDropdownOpen] = useState(false)
   const [isNotificationOpen, setIsNotificationOpen] = useState(false)
@@ -302,9 +304,13 @@ const Sidebar = ({ user, collapsed = false, onCollapsedChange }: SidebarProps) =
                   <span>Your activity</span>
                 </DropdownMenuItem>
                 <DropdownMenuSeparator />
-                <DropdownMenuItem className="gap-3 py-3 cursor-pointer text-destructive focus:text-destructive">
+                <DropdownMenuItem
+                  className="gap-3 py-3 cursor-pointer text-destructive focus:text-destructive"
+                  disabled={isLoggingOut}
+                  onClick={() => logout()}
+                >
                   <LogOut className="h-4 w-4" />
-                  <span>Log out</span>
+                  <span>{isLoggingOut ? 'Logging out...' : 'Log out'}</span>
                 </DropdownMenuItem>
               </DropdownMenuContent>
             </DropdownMenu>
