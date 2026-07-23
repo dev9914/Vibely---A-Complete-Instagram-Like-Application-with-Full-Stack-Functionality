@@ -1,22 +1,37 @@
-import admin from 'firebase-admin';
-import { readFileSync } from 'fs';
-import { fileURLToPath } from 'url';
-import { dirname, join } from 'path';
-import '../config/env.js';
-
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = dirname(__filename);
+import admin from "firebase-admin";
+import "../config/env.js";
 
 let firebaseApp = null;
 let messaging = null;
 let initialized = false;
 
-const getServiceAccountPath = () => {
-  if (process.env.FIREBASE_SERVICE_ACCOUNT_PATH) {
-    return process.env.FIREBASE_SERVICE_ACCOUNT_PATH;
+const getServiceAccount = () => {
+  const {
+    FIREBASE_PROJECT_ID,
+    FIREBASE_CLIENT_EMAIL,
+    FIREBASE_PRIVATE_KEY,
+  } = process.env;
+
+  if (
+    !FIREBASE_PROJECT_ID ||
+    !FIREBASE_CLIENT_EMAIL ||
+    !FIREBASE_PRIVATE_KEY
+  ) {
+    console.warn(
+      "⚠️ Firebase environment variables not found. Push notifications are disabled."
+    );
+    return null;
   }
 
-  return join(__dirname, '../../config/vibely-firebase-adminsdk.json');
+  console.log("Starts with:", FIREBASE_PRIVATE_KEY.slice(0, 35));
+console.log("Ends with:", FIREBASE_PRIVATE_KEY.slice(-35));
+console.log("Contains \\n:", FIREBASE_PRIVATE_KEY.includes("\\n"));
+
+  return {
+    projectId: FIREBASE_PROJECT_ID,
+    clientEmail: FIREBASE_CLIENT_EMAIL,
+    privateKey: FIREBASE_PRIVATE_KEY.replace(/\\n/g, "\n"),
+  };
 };
 
 export const initializeFirebaseAdmin = () => {
@@ -25,43 +40,49 @@ export const initializeFirebaseAdmin = () => {
   }
 
   try {
-    const serviceAccountPath = getServiceAccountPath();
+    const serviceAccount = getServiceAccount();
 
-    let serviceAccount = null;
-    try {
-      serviceAccount = JSON.parse(readFileSync(serviceAccountPath, 'utf8'));
-    } catch {
-      console.warn('⚠️ Firebase service account file not found. Push notifications are disabled.');
+    if (!serviceAccount) {
       initialized = true;
-      return { firebaseApp: null, messaging: null };
+      return {
+        firebaseApp: null,
+        messaging: null,
+      };
     }
 
     if (!admin.apps.length) {
       firebaseApp = admin.initializeApp({
         credential: admin.credential.cert(serviceAccount),
       });
-      console.log('✓ Firebase initialized');
+
+      console.log("✓ Firebase initialized");
     } else {
       firebaseApp = admin.app();
     }
 
     messaging = admin.messaging();
     initialized = true;
-    console.log('✓ Firebase messaging initialized');
+
+    console.log("✓ Firebase messaging initialized");
   } catch (error) {
-    console.error('❌ Firebase initialization error:', error);
+    console.error("❌ Firebase initialization error:", error);
+
     firebaseApp = null;
     messaging = null;
     initialized = false;
   }
 
-  return { firebaseApp, messaging };
+  return {
+    firebaseApp,
+    messaging,
+  };
 };
 
 export const getMessaging = () => {
   if (!initialized) {
     initializeFirebaseAdmin();
   }
+
   return messaging;
 };
 
