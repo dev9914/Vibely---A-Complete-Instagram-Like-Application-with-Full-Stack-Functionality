@@ -23,10 +23,6 @@ const getServiceAccount = () => {
     return null;
   }
 
-  console.log("Starts with:", FIREBASE_PRIVATE_KEY.slice(0, 35));
-console.log("Ends with:", FIREBASE_PRIVATE_KEY.slice(-35));
-console.log("Contains \\n:", FIREBASE_PRIVATE_KEY.includes("\\n"));
-
   return {
     projectId: FIREBASE_PROJECT_ID,
     clientEmail: FIREBASE_CLIENT_EMAIL,
