@@ -1,153 +1,122 @@
-<div align="center">
+# Vibely
 
-# 📸 Vibely
-
-### A Production-Ready Social Media Platform Built with the MERN Stack
-
-<p>
-A modern Instagram-inspired social media application featuring real-time messaging, push notifications,
-background job processing, cloud-native deployment, and scalable architecture.
-</p>
-
-<p>
-
-![React](https://img.shields.io/badge/React-18-61DAFB?style=for-the-badge&logo=react)
-![TypeScript](https://img.shields.io/badge/TypeScript-3178C6?style=for-the-badge&logo=typescript)
-![Node.js](https://img.shields.io/badge/Node.js-339933?style=for-the-badge&logo=node.js)
-![Express](https://img.shields.io/badge/Express-black?style=for-the-badge&logo=express)
-![MongoDB](https://img.shields.io/badge/MongoDB-47A248?style=for-the-badge&logo=mongodb)
-![Socket.IO](https://img.shields.io/badge/Socket.IO-black?style=for-the-badge&logo=socketdotio)
-![Redis](https://img.shields.io/badge/Redis-DC382D?style=for-the-badge&logo=redis)
-![BullMQ](https://img.shields.io/badge/BullMQ-red?style=for-the-badge)
-![Firebase](https://img.shields.io/badge/Firebase-FFCA28?style=for-the-badge&logo=firebase)
-![AWS](https://img.shields.io/badge/AWS-232F3E?style=for-the-badge&logo=amazonaws)
-![Kubernetes](https://img.shields.io/badge/Kubernetes-326CE5?style=for-the-badge&logo=kubernetes)
-
-</p>
-
-</div>
+A modern, full-stack social media platform inspired by Instagram, built with the MERN stack. Vibely combines real-time communication, background job processing, push notifications, cloud media storage, and cloud-native deployment into a production-ready application.
 
 ---
 
-# 🌟 Overview
+## Overview
 
-**Vibely** is a full-stack social media platform inspired by Instagram, designed to demonstrate modern web application architecture and production-ready backend engineering.
+Vibely is designed to demonstrate the architecture and engineering practices used in modern web applications. It includes secure authentication, social interactions, real-time messaging, notification delivery, scalable background processing, and multiple deployment strategies.
 
-The application goes beyond a traditional CRUD project by integrating real-time communication, background job processing, cloud media storage, push notifications, scalable deployment infrastructure, and secure authentication.
-
----
-
-# 🚀 Live Demo
-
-### 🌐 Frontend
-
-**Coming Soon**
-
-### ⚙️ Backend API
-
-https://vibely-instagram-like-application-with.onrender.com
+The project is actively maintained and serves as both a learning project and a portfolio application showcasing full-stack development and cloud deployment.
 
 ---
 
-# ✨ Features
+## Live Demo
 
-## 🔐 Authentication
+**Frontend**
 
-- User Registration
-- Secure Login
-- JWT Authentication
-- Refresh Token Authentication
-- Persistent Sessions
-- Protected Routes
-- Password Encryption using Bcrypt
+https://vibely-social-media-app-frontend.onrender.com/
+
+> The backend is hosted separately on Render and powers authentication, APIs, messaging, notifications, and media management.
 
 ---
 
-## 👤 User Profiles
+## Features
 
-- Create Profile
-- Edit Profile
-- Upload Profile Picture
-- Update Bio
-- Followers & Following
-- Suggested Users
+### Authentication
 
----
-
-## 📸 Posts
-
-- Create Posts
-- Upload Images
-- Edit Posts
-- Delete Posts
-- Feed System
-- Saved Posts
+- User registration
+- Secure login
+- JWT authentication
+- Refresh token authentication
+- Protected routes
+- Persistent sessions
+- Password hashing using Bcrypt
 
 ---
 
-## ❤️ Social Features
+### User Profiles
 
-- Like Posts
-- Unlike Posts
-- Comment System
-- Delete Comments
-- Follow Users
-- Unfollow Users
-- Real-time Feed Updates
-
----
-
-## 💬 Real-Time Messaging
-
-- One-to-One Chat
-- Real-Time Messaging
-- Conversation List
-- Online User Status
-- Instant Delivery
-- Socket.IO Integration
+- Create profile
+- Edit profile
+- Upload profile picture
+- Update bio
+- Follow users
+- Unfollow users
+- Followers & following
+- Suggested users
 
 ---
 
-## 🔔 Notification System
+### Posts
 
-### In-App Notifications
+- Upload images
+- Create posts
+- Edit posts
+- Delete posts
+- Like posts
+- Unlike posts
+- Save posts
+- Personalized feed
 
-- Like Notifications
-- Comment Notifications
-- Follow Notifications
-- Notification Badge
-- Read / Unread Status
+---
 
-### Push Notifications
+### Comments
+
+- Add comments
+- Delete comments
+- Real-time comment updates
+
+---
+
+### Messaging
+
+- One-to-one conversations
+- Real-time messaging
+- Socket.IO integration
+- Instant message delivery
+
+---
+
+### Notification System
+
+#### In-App Notifications
+
+- Like notifications
+- Comment notifications
+- Follow notifications
+- Read / unread status
+- Notification badge
+
+#### Push Notifications
 
 - Firebase Cloud Messaging (FCM)
-- Background Notifications
-- Foreground Notifications
-- Multi-device Support
-- Automatic Token Registration
+- Foreground notifications
+- Background notifications
+- Multi-device support
+- Automatic device registration
 
-### Background Queue Processing
+#### Background Processing
 
-- BullMQ
-- Redis Queue
-- Retry Mechanism
-- Worker Processing
-- Reliable Notification Delivery
-
----
-
-## ☁️ Media Management
-
-- Cloudinary Integration
-- Image Optimization
-- Cloud Storage
-- Secure Upload Pipeline
+- BullMQ job queue
+- Upstash Redis
+- Retry mechanism
+- Worker-based notification processing
 
 ---
 
-# 🏗 Tech Stack
+### Media Management
 
-## Frontend
+- Cloudinary integration
+- Secure image uploads
+- Optimized cloud storage
+
+---
+
+## Tech Stack
+
+### Frontend
 
 - React
 - TypeScript
@@ -158,9 +127,7 @@ https://vibely-instagram-like-application-with.onrender.com
 - Axios
 - Socket.IO Client
 
----
-
-## Backend
+### Backend
 
 - Node.js
 - Express.js
@@ -173,67 +140,69 @@ https://vibely-instagram-like-application-with.onrender.com
 - Firebase Admin SDK
 - Cloudinary
 
----
-
-## Infrastructure
+### Infrastructure
 
 - MongoDB Atlas
 - Upstash Redis
-- Firebase Cloud Messaging
 - Render
 - Docker
 - Docker Compose
 - Kubernetes
-- AWS EKS
+- AWS Elastic Kubernetes Service (EKS)
 - Nginx
 - GitHub Actions
 
 ---
 
-# 🏛 Architecture
+## System Architecture
 
 ```
-                    React + TypeScript
-                            │
-                            ▼
-                      Express.js API
-                            │
-        ┌───────────────────┼────────────────────┐
-        │                   │                    │
-        ▼                   ▼                    ▼
- MongoDB Atlas         Cloudinary         Socket.IO Server
-        │
-        ▼
- BullMQ Queue
-        │
-        ▼
- Upstash Redis
-        │
-        ▼
+                          React + TypeScript
+                                  │
+                                  │
+                                  ▼
+                          Express.js REST API
+                                  │
+          ┌──────────────┬────────┴───────────┬──────────────┐
+          │              │                    │              │
+          ▼              ▼                    ▼              ▼
+    MongoDB Atlas   Cloudinary          Socket.IO      Authentication
+          │
+          ▼
+      BullMQ Queue
+          │
+          ▼
+    Upstash Redis
+          │
+          ▼
  Notification Worker
-        │
-        ▼
+          │
+          ▼
  Firebase Cloud Messaging
-        │
-        ▼
- User Devices
+          │
+          ▼
+      User Devices
 ```
 
 ---
 
-# 📁 Project Structure
+## Project Structure
 
 ```
 Vibely
 │
 ├── backend
 │   ├── src
-│   ├── queues
+│   │   ├── controllers
+│   │   ├── middleware
+│   │   ├── models
+│   │   ├── routes
+│   │   ├── services
+│   │   ├── utils
+│   │   └── bootstrap
+│   │
 │   ├── config
-│   ├── middleware
-│   ├── routes
-│   ├── controllers
-│   ├── services
+│   ├── queues
 │   └── package.json
 │
 ├── frontend
@@ -250,41 +219,39 @@ Vibely
 
 ---
 
-# 🚀 Local Setup
+## Local Development
 
-## Clone Repository
+### Clone the repository
 
 ```bash
-git clone https://github.com/dev9914/Vibely---A-Complete-Instagram-Like-Application-with-Full-Stack-Functionality.git
+git clone https://github.com/dev9914/Vibely.git
 
-cd Vibely---A-Complete-Instagram-Like-Application-with-Full-Stack-Functionality
+cd Vibely
 ```
 
 ---
 
-## Install Dependencies
+### Install dependencies
 
-### Backend
+Backend
 
 ```bash
 cd backend
-
 npm install
 ```
 
-### Frontend
+Frontend
 
 ```bash
 cd frontend
-
 npm install
 ```
 
 ---
 
-# ⚙ Environment Variables
+### Backend Environment Variables
 
-### Backend
+Create a `.env` file inside the `backend` directory.
 
 ```env
 PORT=
@@ -310,33 +277,44 @@ FIREBASE_CLIENT_EMAIL=
 FIREBASE_PRIVATE_KEY=
 ```
 
-### Frontend
+---
+
+### Frontend Environment Variables
+
+Create a `.env` file inside the `frontend` directory.
 
 ```env
 VITE_API_URL=
+VITE_SOCKET_URL=
 ```
 
 ---
 
-# ▶ Running Locally
-
-### Backend
+### Start the backend
 
 ```bash
-npm run dev
-```
+cd backend
 
-### Frontend
-
-```bash
 npm run dev
 ```
 
 ---
 
-# 🐳 Docker
+### Start the frontend
 
-Build and run the project using Docker.
+```bash
+cd frontend
+
+npm run dev
+```
+
+---
+
+## Docker
+
+The repository includes Docker configuration for local containerized development.
+
+Build and start the application:
 
 ```bash
 docker-compose up --build
@@ -344,11 +322,11 @@ docker-compose up --build
 
 ---
 
-# ☸ Kubernetes Deployment
+## Kubernetes Deployment
 
-The repository includes Kubernetes manifests for deploying Vibely on **AWS Elastic Kubernetes Service (EKS)**.
+The project also includes Kubernetes manifests for deployment on AWS Elastic Kubernetes Service (EKS).
 
-Deploy using:
+Deploy the application using:
 
 ```bash
 kubectl apply -f k8s/
@@ -356,101 +334,99 @@ kubectl apply -f k8s/
 
 ---
 
-# 🔄 CI/CD
+## Continuous Integration
 
-The project includes GitHub Actions workflows for automated deployment.
+GitHub Actions workflows are included for automated build and deployment.
 
-Pipeline includes:
+The CI/CD pipeline supports:
 
-- Dependency Installation
-- Build
-- Docker Image Creation
-- Container Registry Push
-- Kubernetes Deployment
+- Dependency installation
+- Project build
+- Docker image creation
+- Container registry publishing
+- Kubernetes deployment
 
 ---
 
-# 📱 Screenshots
+## Screenshots
 
-> Add screenshots here
+The following screenshots can be added here:
 
-- Login
+- Authentication
 - Home Feed
-- Profile
-- Chat
+- User Profile
+- Post Creation
+- Messaging
 - Notifications
 - Mobile View
 
 ---
 
-# 🚀 Future Improvements
+## Future Improvements
 
 - Stories
 - Reels
-- Video Uploads
-- AI Caption Suggestions
-- Search Improvements
-- Dark Mode
-- User Blocking
-- Post Sharing
-- Email Notifications
+- Video uploads
+- AI-powered captions
+- User blocking
+- Advanced search
+- Email notifications
+- Performance improvements
 
 ---
 
-# 📚 What This Project Demonstrates
+## What This Project Demonstrates
 
-- Full-Stack MERN Development
-- REST API Design
-- Authentication & Authorization
-- Real-Time Communication
-- Background Job Processing
-- Push Notification Architecture
-- Cloud Media Storage
+- Full-stack application development
+- RESTful API design
+- Authentication & authorization
+- Real-time communication
+- Background job processing
+- Push notification architecture
+- Cloud media management
 - Containerization
-- Kubernetes Deployment
-- CI/CD Pipelines
-- Cloud Infrastructure
-- Scalable Backend Design
+- Kubernetes deployment
+- CI/CD workflows
+- Cloud infrastructure
+- Scalable backend architecture
 
 ---
 
-# 🤝 Contributing
+## Contributing
 
-Contributions are always welcome.
+Contributions are welcome.
 
-1. Fork the repository
-2. Create your feature branch
-
-```bash
-git checkout -b feature/AmazingFeature
-```
-
-3. Commit your changes
+1. Fork the repository.
+2. Create a new branch.
 
 ```bash
-git commit -m "Add AmazingFeature"
+git checkout -b feature/my-feature
 ```
 
-4. Push the branch
+3. Commit your changes.
 
 ```bash
-git push origin feature/AmazingFeature
+git commit -m "Add new feature"
 ```
 
-5. Open a Pull Request
+4. Push your branch.
+
+```bash
+git push origin feature/my-feature
+```
+
+5. Open a Pull Request.
 
 ---
 
-# 📄 License
+## License
 
-Licensed under the MIT License.
+This project is licensed under the MIT License.
 
 ---
 
-<div align="center">
+## Author
 
-### ⭐ If you found this project helpful, consider giving it a star!
+**Devanand**
 
-Made with ❤️ by **Devanand**
-
-</div>
+GitHub: https://github.com/dev9914
