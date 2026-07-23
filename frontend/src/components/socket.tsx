@@ -5,7 +5,7 @@ let socket: Socket | null = null;
 
 const initializeSocket = (userId: string): Socket => {
   if (!socket) {
-    socket = io("http://localhost:3000", {
+    socket = io(import.meta.env.VITE_SOCKET_URL || "http://localhost:5000", {
       reconnection: false,
       query: { userId }  // Pass the userId as a query parameter
     });

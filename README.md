@@ -1,6 +1,21 @@
 # 📸 Instagram Clone (MERN Stack + AWS + Kubernetes)
 
-## 🌟 Overview
+## � NEW: Real-Time Notifications & Push Notifications
+
+Vibely now includes a **production-ready notification system** with:
+- 🔔 **In-App Notifications** - Bell icon with unread count badge
+- 📱 **Push Notifications** - FCM-powered push notifications (foreground & background)
+- 🔄 **Real-Time Updates** - Auto-refresh notifications every 30 seconds
+- 🌐 **Multi-Device Support** - Receive notifications on all your devices
+- 🎯 **Smart Triggers** - Get notified on likes, comments, and follows
+
+📖 **Quick Setup:** [QUICK_START_NOTIFICATIONS.md](./QUICK_START_NOTIFICATIONS.md)  
+🧪 **Testing Guide:** [NOTIFICATION_TESTING_GUIDE.md](./NOTIFICATION_TESTING_GUIDE.md)  
+📊 **Full Documentation:** [NOTIFICATION_IMPLEMENTATION_SUMMARY.md](./NOTIFICATION_IMPLEMENTATION_SUMMARY.md)
+
+---
+
+## �🌟 Overview
 This is a **full-fledged Instagram Clone** built using the **MERN stack** with **AWS deployment** and **Kubernetes orchestration**. It includes all core Instagram features such as user authentication, posts, comments, likes, notifications, and friend requests.
 
 ## 🚀 Live Demo

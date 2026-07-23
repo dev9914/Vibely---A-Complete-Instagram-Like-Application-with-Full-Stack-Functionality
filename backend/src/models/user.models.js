@@ -11,7 +11,8 @@ const UserSchema = new Schema(
         unique: true,
         lowercase: true,
         trim: true, 
-        index: true
+        minlength: 3,
+  maxlength: 30,
     },
     email: {
         type: String,
@@ -62,6 +63,58 @@ const UserSchema = new Schema(
       type: String,
       default: 0
     },
+    bio: {
+  type: String,
+  default: "",
+  trim: true,
+},
+
+website: {
+  type: String,
+  default: "",
+  trim: true,
+},
+
+location: {
+  type: String,
+  default: "",
+  trim: true,
+},
+    // 🔔 FCM Push Notification Tokens
+    fcmTokens: [
+      {
+        token: {
+          type: String,
+          required: true,
+        },
+        platform: {
+          type: String,
+          enum: ['web', 'android', 'ios', 'desktop'],
+          default: 'web',
+        },
+        deviceId: {
+          type: String,
+          required: true,
+          index: true,
+        },
+        userAgent: {
+          type: String,
+          default: '',
+        },
+        lastUsed: {
+          type: Date,
+          default: Date.now,
+        },
+        isActive: {
+          type: Boolean,
+          default: true,
+        },
+        registeredAt: {
+          type: Date,
+          default: Date.now,
+        },
+      }
+    ],
 
 },
   { timestamps: true }

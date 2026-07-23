@@ -1,294 +1,399 @@
-import axios from "axios";
 import { useEffect, useRef, useState } from "react";
-import { useParams } from "react-router-dom";
-import { Link } from "react-router-dom";
-import { IoCallOutline, IoVideocamOutline } from "react-icons/io5";
-import { RxDotFilled, RxInfoCircled } from "react-icons/rx";
-import MessageBubble from "../components/MessageBubble";
-import { Button } from "../components/ui/button";
-import {PiNotePencilDuotone } from "react-icons/pi";
-import { getSocket } from "../components/socket";
+import { useParams, Link } from "react-router-dom";
+import {
+  Phone,
+  Video,
+  Info,
+  Loader2,
+  Send,
+  Image,
+  Smile,
+} from "lucide-react";
 import { Socket } from "socket.io-client";
-import { GoDotFill } from "react-icons/go";
+import { useAppDispatch } from "@/store/hooks";
+import {
+  messageApi,
+  Message,
+  Conversation,
+} from "@/services/messageApi";
+
+import { Button } from "@/components/ui/button";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { Input } from "@/components/ui/input";
+import { ScrollArea } from "@/components/ui/scroll-area";
+import { Skeleton } from "@/components/ui/skeleton";
+import { cn } from "@/lib/utils";
+import { getSocket } from "@/components/socket";
+import { useGetUserByIdQuery } from "@/services/userApi";
+import {
+  useGetConversationsQuery,
+  useGetMessagesQuery,
+  useSendMessageMutation,
+} from "@/services/messageApi";
 
 interface ChatProps {
-  userId: string,
-  userAvatar: string,
-  username: string
+  userId: string;
+  userAvatar: string;
+  username: string;
 }
-type Message = {
-  senderId: string;
-  receiverId: string;
-  message: string;
-  createdAt: string;
-  _id: string;
+
+// Conversation Item for Sidebar
+const ConversationItem = ({
+  conversation,
+  isActive = false,
+  isOnline = false,
+}: {
+  conversation: Conversation;
+  isActive?: boolean;
+  isOnline?: boolean;
+}) => {
+  const user = conversation.user;
+
+  return (
+    <Link
+      to={`/chat/${user._id}`}
+      className={cn(
+        "flex items-center gap-3 p-3 hover:bg-muted/50 transition-colors rounded-lg mx-2",
+        isActive && "bg-muted",
+      )}
+    >
+      <div className="relative">
+        <Avatar className="w-14 h-14">
+          <AvatarImage src={user.avatar} />
+          <AvatarFallback>{user.username[0]?.toUpperCase()}</AvatarFallback>
+        </Avatar>
+
+        {isOnline && (
+          <span className="absolute bottom-0 right-0 w-4 h-4 bg-green-500 rounded-full border-2 border-background" />
+        )}
+      </div>
+
+      <div className="flex-1 min-w-0">
+        <p className="font-semibold text-sm truncate">{user.username}</p>
+
+        <p className="text-sm text-muted-foreground truncate">
+          {conversation.lastMessage?.message || "Start chatting"}
+        </p>
+      </div>
+    </Link>
+  );
 };
 
-interface Item {
-  _id: string,
-  username: string,
-  avatar: string,
-  fullName: string
-}
+// Message Bubble Component
+const ChatBubble = ({
+  message,
+  isSender,
+  receiverAvatar,
+  timestamp,
+}: {
+  message: string;
+  isSender: boolean;
+  senderAvatar: string;
+  receiverAvatar: string;
+  timestamp: string;
+}) => {
+  const formatTime = (date: string) => {
+    return new Date(date).toLocaleTimeString([], {
+      hour: "2-digit",
+      minute: "2-digit",
+    });
+  };
 
-interface User {
-  _id: string,
-  username: string,
-  avatar: string,
-  fullName: string
-}
-
+  return (
+    <div
+      className={cn(
+        "flex gap-2 mb-3",
+        isSender ? "flex-row-reverse" : "flex-row",
+      )}
+    >
+      {!isSender && (
+        <Avatar className="w-7 h-7 mt-auto">
+          <AvatarImage src={receiverAvatar} />
+          <AvatarFallback>U</AvatarFallback>
+        </Avatar>
+      )}
+      <div
+        className={cn(
+          "max-w-[60%] px-4 py-2 rounded-2xl",
+          isSender
+            ? "bg-primary text-primary-foreground rounded-br-sm"
+            : "bg-muted rounded-bl-sm",
+        )}
+      >
+        <p className="text-sm">{message}</p>
+        <p
+          className={cn(
+            "text-[10px] mt-1",
+            isSender ? "text-primary-foreground/70" : "text-muted-foreground",
+          )}
+        >
+          {formatTime(timestamp)}
+        </p>
+      </div>
+    </div>
+  );
+};
 
 const Chat = ({ userId, userAvatar, username }: ChatProps) => {
   const [message, setMessage] = useState("");
-  const [messages, setMessages] = useState<Message[]>([]);
   const { receiverId } = useParams();
-  const [user, setUser] = useState<User | null>(null);
   const [socket, setSocket] = useState<Socket | null>(null);
-  const [onlineUsers , setOnlineUsers] = useState<string[]>([])
-
-  useEffect(() => {
-    if (userId) {
-      // Initialize socket
-      const socketInstance = getSocket(userId);
-      setSocket(socketInstance);
-  
-      return () => {
-        if (socket) {
-          socket.disconnect();
-          console.log("Socket disconnected");
-        }
-      };
-    }
-  }, [userId]); // 
-
-  const getuser = async ()=>{
-    try {
-      const response = await axios.get(`${apiUrl}/users/getuserbyId/${receiverId}`)
-
-
-    console.log(response.data.data.user)
-    setUser(response.data.data.user)
-    } catch (error) {
-    console.log(error)
-    }
-  }
-
-  const apiUrl = import.meta.env.VITE_API_URL;
-  const [allUser, setAllUser] = useState<Item[]>([]);
-
-  const fileterMe: Item[] = allUser.filter((item)=> item._id !== userId)
-
-  useEffect(() => {
-    getAlluser();
-  }, []);
-
-  const getAlluser = async () => {
-    try {
-      const response = await axios.get(`${apiUrl}/users/getalluser`);
-      // console.log(response.data.data.alluser)
-      setAllUser(response.data.data.alluser);
-      return response.data;
-    } catch (error) {
-      console.log(error);
-    }
-  };
-
-  useEffect(() => {
-    // Fetch previous messages
-    const fetchMessages = async () => {
-      try {
-        const response = await axios.get(
-          `${apiUrl}/message/get/${receiverId}`,
-          { headers: { Authorization: localStorage.getItem("token") } }
-        );
-        console.log(response.data)
-        setMessages(response.data);
-      } catch (error) {
-        console.error("Error fetching messages:", error);
-      }
-    };
-    fetchMessages();
-
-    getuser()
-
-    // Listen for new messages
-    socket?.on("newMessage", (newMessage): any => {
-      console.log(newMessage)
-      if(receiverId === newMessage.senderId) {
-        setMessages((prevMessages) => [...prevMessages, newMessage]);
-      }
-    });
-
-    socket?.on('getOnlineUsers', (data): any => {
-      console.log('online users: ', data)
-      setOnlineUsers(data)
-    })
-
-    // Clean up the socket connection on unmount
-    return () => {
-      socket?.off("newMessage");
-    };
-  }, [receiverId,socket]);
-
-  const sendMessage = async () => {
-    if (message.trim()) {
-      try {
-        const response = await axios.post(
-          `${apiUrl}/message/send/${receiverId}`,
-          { message },
-          { headers: { Authorization: localStorage.getItem("token") } }
-        );
-        setMessage(""); // Clear input
-        setMessages((prevMessages) => [...prevMessages, response.data]);
-      } catch (error) {
-        console.error("Error sending message:", error);
-      }
-    }
-  };
-
+  const [onlineUsers, setOnlineUsers] = useState<string[]>([]);
   const messagesEndRef = useRef<HTMLDivElement | null>(null);
 
+  // RTK Query hooks
+const { data: userData } = useGetUserByIdQuery(receiverId!, {
+  skip: !receiverId,
+});
+
+  const { data: messagesData, isLoading: messagesLoading, isFetching: messagesFetching } =
+    useGetMessagesQuery(receiverId!, {
+      skip: !receiverId,
+    });
+
+  const messages = messagesData?.messages ?? [];
+  const [sendMsg, { isLoading: isSending }] = useSendMessageMutation();
+const dispatch = useAppDispatch();
+
+  const user = userData?.user || null;
+
+useEffect(() => {
+  if (!userId) return;
+
+  const socketInstance = getSocket(userId);
+
+  setSocket(socketInstance);
+
+  return () => {
+    socketInstance.off("newMessage");
+    socketInstance.off("getOnlineUsers");
+  };
+}, [userId]);
+
+useEffect(() => {
+  if (!socket || !receiverId) return;
+
+  const handleNewMessage = (newMessage: Message) => {
+    const senderId =
+      typeof newMessage.senderId === "string"
+        ? newMessage.senderId
+        : newMessage.senderId._id;
+
+    if (senderId !== receiverId) return;
+
+    dispatch(
+      messageApi.util.updateQueryData(
+        "getMessages",
+        receiverId,
+        (draft) => {
+          if (
+            !draft.messages.some(
+              (message) => message._id === newMessage._id
+            )
+          ) {
+            draft.messages.push(newMessage);
+          }
+        }
+      )
+    );
+  };
+
+  const handleOnlineUsers = (users: string[]) => {
+    setOnlineUsers(users);
+  };
+
+  socket.on("newMessage", handleNewMessage);
+  socket.on("getOnlineUsers", handleOnlineUsers);
+
+  return () => {
+    socket.off("newMessage", handleNewMessage);
+    socket.off("getOnlineUsers", handleOnlineUsers);
+  };
+}, [socket, receiverId, dispatch]);
+  const sendMessage = async () => {
+    if (message.trim() && !isSending) {
+      try {
+        await sendMsg({
+          receiverId: receiverId!,
+          message,
+        }).unwrap();
+
+        setMessage("");
+      } catch (error) {
+        console.error(error);
+      }
+    }
+  };
+
   useEffect(() => {
-    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages]);
 
   const handleKeyDown = (event: React.KeyboardEvent<HTMLInputElement>) => {
-    if (event.key === 'Enter') {
-      event.preventDefault(); // Prevents any unintended behavior from Enter key
-      sendMessage(); // Call sendMessage when Enter is pressed
+    if (event.key === "Enter") {
+      event.preventDefault();
+      sendMessage();
     }
   };
 
   return (
-    <div className="flex">
-      <div
-        style={{
-          scrollbarWidth: "none" /* Firefox */,
-          msOverflowStyle: "none" /* IE and Edge */,
-        }}
-        className="w-96 border-r h-screen border-gray-500 border-opacity-40 overflow-x-hidden overflow-y-auto"
-      >
-        <div className="flex ml-7 mr-5 mt-10 mb-5 justify-between text-white font-sans font-semibold">
-          <div className="text-xl font-bold">{username}</div>
-          <div><PiNotePencilDuotone size={30} />
-</div>
-        </div>
-        <div className="text-white ml-7 mr-5 font-sans font-semibold flex justify-between">
-          <p className="font-bold">Messages</p>
-          <p className="text-blue-500">Request</p>
-        </div>
-        <div className="ml-7 mt-3 text-white">
-          {fileterMe.map((item) => (
-            <Link to={`/chat/${item._id}`}>
-              <div key={item._id} className="flex mb-4 items-center">
-                <div className="cursor-pointer">
-                  {/* <Link to={`/user/${_id}`}> */}
-                  <img
-                    src={item.avatar}
-                    className="rounded-full border border-gray-600 cursor-pointer w-14 h-14"
-                    alt=""
-                  />
-                  {
-                    onlineUsers.includes(item._id) && (
-                      <GoDotFill className="text-green-600 -mt-5 ml-10 text-xl" />
-                    )
-                  }
-                  {/* </Link> */}
-                </div>
-                <div className="flex ml-3 flex-col">
-                  {/* <Link to={`/user/${_id}`}> */}
-                  <p className="cursor-pointer text-sm font-semibold -mt-1 font-sans">
-                    {item.username}
-                  </p>
-                  {/* </Link> */}
-                  <p className="-mt-1 opacity-50 text-sm">{item.fullName}</p>
-                </div>
-              </div>
-            </Link>
-          ))}
-        </div>
-      </div>
-      <div className="text-white flex-grow">
-        <div className="chat-container">
-          <div>
-            <div className="border-b flex justify-between border-gray-500 border-opacity-40">
-          <div className="flex mb-4 ml-4 text-white items-center">
-                <div className="cursor-pointer mt-3">
-                  <Link to={`/user/${user?._id}`}>
-                  <img
-                    src={user?.avatar}
-                    className="rounded-full border border-gray-600 cursor-pointer w-12 h-12"
-                    alt=""
-                  />
-                  </Link>
-                </div>
-                <div className="flex ml-3 flex-col">
-                  <Link to={`/user/${user?._id}`}>
-                  <p className="font-sans mt-2 font-semibold tracking-wide">{user?.fullName}</p>
-                  </Link>
-                </div>
-              </div>
-              <div className="flex items-center space-x-3 mr-3 justify-end">
-              <IoCallOutline className="cursor-pointer" size={30} />
-              <IoVideocamOutline className="cursor-pointer" size={30} />
-              <RxInfoCircled className="cursor-pointer" size={28} />
-              </div>
+    <div className="h-full min-h-0 flex flex-col overflow-hidden">
+
+      {/* Chat Area */}
+      <div className="flex-1 min-h-0 flex flex-col overflow-hidden">
+        {/* Chat Header */}
+        <div className="h-16 border-b border-border flex items-center justify-between px-4">
+          <Link to={`/user/${user?._id}`} className="flex items-center gap-3">
+            <Avatar className="w-10 h-10">
+              <AvatarImage src={user?.avatar} />
+              <AvatarFallback>
+                {user?.fullName?.[0]?.toUpperCase()}
+              </AvatarFallback>
+            </Avatar>
+            <div>
+              <p className="font-semibold text-sm">{user?.fullName}</p>
+              <p className="text-xs text-muted-foreground">
+                {onlineUsers.includes(user?._id || "")
+                  ? "Active now"
+                  : "Offline"}
+              </p>
             </div>
+          </Link>
+          <div className="flex items-center gap-2">
+            <Button variant="ghost" size="icon">
+              <Phone className="w-5 h-5" />
+            </Button>
+            <Button variant="ghost" size="icon">
+              <Video className="w-5 h-5" />
+            </Button>
+            <Button variant="ghost" size="icon">
+              <Info className="w-5 h-5" />
+            </Button>
           </div>
-          <div style={{height:"77vh"}} className="mt-3 overflow-y-auto ml-4">
-            <div className="flex flex-col w-full mt-5 items-center">
-            <div className="">
+        </div>
+
+        {/* Messages Area */}
+        <div className="flex-1 min-h-0 flex flex-col overflow-hidden">
+          {/* Profile Card at Top */}
+          {messages.length === 0 && (
+          <div className="flex flex-col items-center py-8 px-4 border-b border-border">
             <Link to={`/user/${user?._id}`}>
-            <img src={user?.avatar} className="rounded-full border border-gray-600 cursor-pointer w-24 h-24" alt="" />
+              <Avatar className="w-24 h-24 mb-4">
+                <AvatarImage src={user?.avatar} />
+                <AvatarFallback className="text-2xl">
+                  {user?.fullName?.[0]?.toUpperCase()}
+                </AvatarFallback>
+              </Avatar>
+            </Link>
+            <p className="text-lg font-semibold">{user?.fullName}</p>
+            <p className="text-sm text-muted-foreground">
+              {user?.username} · Vibely
+            </p>
+            <Link to={`/user/${user?._id}`}>
+              <Button variant="secondary" size="sm" className="mt-4">
+                View profile
+              </Button>
             </Link>
           </div>
-            <p className=" text-xl font-sans font-semibold mt-1">{user?.fullName}</p>
-            <div className="text-sm mt-1 flex text-gray-400 opacity-65"><p>{user?.username}</p><RxDotFilled size={10} className="text-gray-100 mt-2 opacity-60" /><p>Vibely</p></div>
-            <Link to={`/user/${user?._id}`}>
-            <Button size={'sm'} style={{background:'#262626'}} className="cursor-pointer mt-4">View profile</Button>
-            </Link>
+          )}
+
+          <ScrollArea className="flex-1 min-h-0">
+            <div className="flex min-h-0 flex-col gap-4 p-4">
+              {!messagesLoading && messagesFetching && messages.length > 0 && (
+                <div className="flex items-center justify-center gap-2 py-1 text-xs text-muted-foreground">
+                  <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                  Updating messages...
+                </div>
+              )}
+
+              {messagesLoading ? (
+                <div className="space-y-4">
+                  {Array.from({ length: 5 }).map((_, i) => (
+                    <div
+                      key={i}
+                      className={cn(
+                        "flex gap-2",
+                        i % 2 === 0 ? "flex-row-reverse" : "flex-row",
+                      )}
+                    >
+                      <Skeleton className="w-7 h-7 rounded-full" />
+                      <Skeleton
+                        className={cn(
+                          "h-10 rounded-2xl",
+                          i % 2 === 0 ? "w-40" : "w-32",
+                        )}
+                      />
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <div className="flex-1 min-h-0 space-y-3">
+                  {messages.map((msg) => (
+                    <ChatBubble
+                      key={msg._id}
+                      message={msg.message}
+                      isSender={
+                        typeof msg.senderId === "string"
+                          ? msg.senderId === userId
+                          : msg.senderId._id === userId
+                      }
+                      senderAvatar={userAvatar}
+                      receiverAvatar={user?.avatar || ""}
+                      timestamp={msg.createdAt}
+                    />
+                  ))}
+                  <div ref={messagesEndRef} />
+                </div>
+              )}
             </div>
-          {messages.map((msg) => (
-        <MessageBubble
-          key={msg._id}
-          sentAt={msg.createdAt}
-          message={msg.message}           // Pass message text as a prop
-          isSender={msg.senderId === userId}
-          receiverAvatar={user?.avatar}
-          userAvatar={userAvatar}
-        />
-      ))}
-      <div ref={messagesEndRef} />
-          </div>
-          <div className="fixed flex space-x-2 bottom-5 mx-3">
-          <div className="absolute flex items-center border border-gray-400 border-opacity-40 rounded-full bottom-0">
-        <input
-          type="text"
-          value={message}
-          onChange={(e)=> setMessage(e.target.value)}
-          style={{ width: '53.5vw' ,color: 'white'}}
-          onKeyDown={handleKeyDown}
-          className="bg-black ml-3 h-9 text-white placeholder:text-gray-500 focus:outline-none "
-          placeholder="Message..."
-          name=""
-          id=""
-        />
-        <p
-         onClick={()=> sendMessage()}
-         className={`${
-          !message ? 'text-gray-500' : 'text-blue-500 font-semibold'
-        } ml-3 mr-5 cursor-pointer`}
-        >
-          Post
-        </p>
-      </div>
+          </ScrollArea>
+
+          {/* Message Input */}
+          <div className="p-4 border-t border-border">
+            <div className="flex items-center gap-2 bg-muted rounded-full px-4 py-2">
+              <Button variant="ghost" size="icon" className="h-8 w-8 shrink-0">
+                <Smile className="w-5 h-5 text-muted-foreground" />
+              </Button>
+              <Input
+                type="text"
+                value={message}
+                onChange={(e) => setMessage(e.target.value)}
+                onKeyDown={handleKeyDown}
+                placeholder="Message..."
+                className="
+  pl-1
+    border-none
+    shadow-none
+    outline-none
+    ring-0
+    focus:ring-0
+    focus-visible:ring-0
+    focus-visible:ring-offset-0
+    focus:border-none
+    bg-transparent
+  "
+              />
+              <Button variant="ghost" size="icon" className="h-8 w-8 shrink-0">
+                <Image className="w-5 h-5 text-muted-foreground" />
+              </Button>
+              <Button
+                variant="ghost"
+                size="icon"
+                className={cn(
+                  "h-8 w-8 shrink-0",
+                  message.trim() && "text-primary hover:text-primary/80",
+                )}
+                onClick={sendMessage}
+                disabled={!message.trim() || isSending}
+              >
+                <Send className="w-5 h-5" />
+              </Button>
+            </div>
           </div>
         </div>
       </div>
     </div>
   );
 };
-
 
 export default Chat;

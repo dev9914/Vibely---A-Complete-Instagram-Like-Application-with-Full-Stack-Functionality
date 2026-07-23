@@ -21,12 +21,14 @@ import userRouter from './routes/user.routes.js'
 import postRouter from './routes/post.routes.js'
 import messageRouter from './routes/message.routes.js'
 import captionRouter from './routes/aiFeature.routes.js'
+import notificationRouter from './routes/notification.routes.js'
 
 //routes declaration
 app.use("/api/v1/users", userRouter)
 app.use("/api/v1/post",postRouter)
 app.use("/api/v1/message", messageRouter)
 app.use("/api/v1/ai", captionRouter)
+app.use("/api/v1/notifications", notificationRouter)
 
 
 export {app}

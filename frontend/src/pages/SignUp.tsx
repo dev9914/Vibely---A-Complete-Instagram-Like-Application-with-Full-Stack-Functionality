@@ -1,212 +1,399 @@
-import { useState } from 'react'
-import './SignIn.css'
-import { Link } from 'react-router-dom'
-import axios from 'axios'
-import { useNavigate } from "react-router-dom"
+import { Link, useNavigate } from 'react-router-dom'
+import { useRegisterMutation } from '../services/userApi'
+import { toast } from 'sonner'
+import { useForm } from 'react-hook-form'
+import { zodResolver } from '@hookform/resolvers/zod'
+import { registerSchema } from '../lib/validations'
+import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '../components/ui/form'
+import { Input } from '../components/ui/input'
+import { Button } from '../components/ui/button'
+import { useDispatch } from 'react-redux'
+import { setCredentials } from '../store/authSlice'
+import { Eye, EyeOff, Loader2, User, X, Check } from 'lucide-react'
+import { useState, useRef } from 'react'
+import { AuthLayout, SocialLoginButton } from '../components/auth'
 
+/**
+ * SignUp Page
+ * Premium split-screen layout with phone mockup hero
+ */
 const SignUp = () => {
   const navigate = useNavigate()
-  const apiUrl = import.meta.env.VITE_API_URL
+  const dispatch = useDispatch()
+  const [register, { isLoading }] = useRegisterMutation()
+  const [showPassword, setShowPassword] = useState(false)
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false)
+  const [avatarPreview, setAvatarPreview] = useState<string | null>(null)
+  const fileInputRef = useRef<HTMLInputElement>(null)
 
-  const [email, setEmail] = useState('')
-  const [password, setPassword] = useState('')
-  const [confirmpassword, setconfirmPassword] = useState('')
-  const [username, setUsername] = useState('')
-  const [fullname, setfullName] = useState('')
-  const [error, setError] = useState('');
-  const [avatar, setAvatar] = useState({});
+  const form = useForm({
+    resolver: zodResolver(registerSchema),
+    defaultValues: {
+      username: '',
+      fullName: '',
+      email: '',
+      password: '',
+      confirmPassword: '',
+      avatar: undefined,
+    },
+  })
 
-  const handleInputChange = (e) => {
-    if (e.target.name === "email") {
-      setEmail(e.target.value);
-    }
-    if (e.target.name === "password") {
-      setPassword(e.target.value);
-    }
-    if (e.target.name === "username") {
-      setUsername(e.target.value);
-    }
-    if (e.target.name === "confirmPassword") {
-      setconfirmPassword(e.target.value);
-    }
-    if (e.target.name === "fullname") {
-      setfullName(e.target.value);
-    } 
-    if (e.target.name === "image") {
-    // Handle image upload
-    setAvatar(e.target.files[0]);
-    console.log(avatar)
+  // Password validation states
+  const password = form.watch('password')
+  const passwordChecks = {
+    length: password?.length >= 6,
+    uppercase: /[A-Z]/.test(password || ''),
+    lowercase: /[a-z]/.test(password || ''),
+    number: /[0-9]/.test(password || ''),
   }
-  };
 
-  // const SignUp = async() =>{
-  //   try {
-  //     const response = await axios.post(`${url}/users/register`,{
-  //       email: email,
-  //       username:username,
-  //       password:password,
-  //       fullName:fullname,
-  //       avatar:''
-  //     })
-  //     setEmail('')
-  //     setPassword('')
-  //     setconfirmPassword('')
-  //     setfullName('')
-  //     setUsername('')
-  //     if(response.data.data.accessToken){
-  //       navigate('/')
-  //     }else {
-  //       setError('login failed')
-  //     }
+  const handleGoogleSignUp = () => {
+    toast('Coming soon', {
+      description: 'Google signup will be available shortly',
+    })
+    // TODO: Implement Google OAuth
+  }
 
-  //     return response.data
-  //   } catch (error) {
-  //     console.log(error)
-  //     console.log(error?.response.data.errors)
-  //     setError(error?.response.data.errors)
-  //     setEmail('')
-  //     setPassword('')
-  //     setconfirmPassword('')
-  //     setfullName('')
-  //     setUsername('')
-  //   }
-    
-  // }
+  const handleGithubSignUp = () => {
+    toast('Coming soon', {
+      description: 'GitHub signup will be available shortly',
+    })
+    // TODO: Implement GitHub OAuth
+  }
 
-  const SignUp = async () => {
+  const handleAvatarChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]
+    if (file) {
+      form.setValue('avatar', file)
+      const reader = new FileReader()
+      reader.onloadend = () => {
+        setAvatarPreview(reader.result as string)
+      }
+      reader.readAsDataURL(file)
+    }
+  }
+
+  const removeAvatar = () => {
+    form.setValue('avatar', undefined)
+    setAvatarPreview(null)
+    if (fileInputRef.current) {
+      fileInputRef.current.value = ''
+    }
+  }
+
+  const onSubmit = async (data: any) => {
     try {
-    const formData = new FormData();
-    formData.append("username", username);
-    formData.append("email", email);
-    formData.append("password", password);
-    formData.append("fullName", confirmpassword);
-    
-    // Append the image if it exists
-    if (avatar) {
-      formData.append("avatar", avatar);
-      console.log(avatar) // 'productImage' should match what the backend expects
+      const formData = new FormData()
+      formData.append('username', data.username)
+      formData.append('email', data.email)
+      formData.append('password', data.password)
+      formData.append('fullName', data.fullName)
+
+      if (data.avatar) {
+        formData.append('avatar', data.avatar)
+      }
+
+      const result = await register(formData).unwrap()
+
+      if (result?.accessToken && result?.user) {
+        dispatch(setCredentials({
+          user: result.user,
+          accessToken: result.accessToken,
+          refreshToken: result.refreshToken,
+        }))
+
+        toast('Account created', {
+          description: `Welcome to Vibely, ${result.user.username}!`,
+        })
+        form.reset()
+        navigate('/')
+      } else {
+        toast('Registration failed', {
+          description: 'Invalid response from server',
+        })
+      }
+    } catch (error: any) {
+      console.error('Registration error:', error)
+      toast('Unable to create account', {
+        description: error?.data?.message || 'Please try again',
+      })
     }
-
-    const response = await axios.post(
-        `${apiUrl}/users/register`, // API endpoint URL
-        formData, {headers: {
-          'Content-Type': 'multipart/form-data',
-        },}
-      )
-      if (response.data.data.accessToken) {
-        const token = response.data.data.accessToken;
-        const expirationTime = Date.now() + 12 * 60 * 60 * 1000; // Set expiration to 12 hours
-
-        // Store token and expiration time in localStorage
-        localStorage.setItem('token', token);
-        localStorage.setItem('tokenExpiry', expirationTime);
-
-        // Redirect to the home page
-        navigate('/');
-    } else {
-        setError('Login failed');
-    }
-
-  setEmail('')
-  setPassword('')
-  setconfirmPassword('')
-  setError('')
-  setUsername('')
-  setAvatar('')
-  setfullName('')
-  console.log(response.data.data)
-  return response.data
-
-    } catch (error) {
-        console.log(error)
-    }
-  };
-
-  const handleSignUp = ()=> {
-    setError("");
-
-  // Check if email is provided and if it ends with '@gmail.com'
-  if (!email) {
-    return setError("Email is required");
-  } else if (!email.endsWith("@gmail.com")) {
-    return setError("Email must end with '@gmail.com'");
   }
 
-    if(!email) {
-      return setError("Email and password is required")
-    }
-    if(!password) {
-      return setError("Password is required")
-    }
-    if(!(password === confirmpassword)) {
-        return setError("Password and Confirm Password should be same")
-    }
-    if(!username) {
-      return setError("Password is required")
-    }
-    if(!fullname) {
-      return setError("Password is required")
-    }
-    if(!avatar) {
-      return setError("Password is required")
-    }
-    SignUp()
-  }
+  return (
+    <AuthLayout
+      title="Join Vibely"
+      subtitle="Create your account and start sharing moments."
+    >
+      {/* Social Login Buttons */}
+      <div className="space-y-3 mb-5">
+        <SocialLoginButton
+          provider="google"
+          onClick={handleGoogleSignUp}
+          disabled={isLoading}
+        />
+        <SocialLoginButton
+          provider="github"
+          onClick={handleGithubSignUp}
+          disabled={isLoading}
+        />
+      </div>
 
-  return (<>
-    <div style={{height:'110vh',marginLeft:'-15vw'}} className='text-white flex justify-center'>
-    <div className='maincardsignup mt-3 rounded-md'>
-     <div className='m-7'>
-         <div className='flex'>
-         {/* <img src={icon} className='mr-2' style={{width:'25px', height:"25px"}} alt="" /> */}
-         <h1 className='text-xl mb-4 text-blue-500 font-sans font-semibold'>Vibely</h1>
-         </div>
-         <h1 className='text-3xl font-sans font-semibold'>Sign Up</h1>
-         <div className='flex flex-col mt-4'>
-             <label htmlFor="" className='text-gray-500 ml-1 text-md mb-2 font-sans font-semibold'>Username</label>
-             <input type="text" autoComplete="off" value={username} onChange={handleInputChange} name="username" id="" className='bg-black text-sm placeholder-opacity-5 text-gray-200 h-10 pl-3 rounded-lg' placeholder='Enter your username' />
-         </div>
-         <div className='flex flex-col mt-4'>
-             <label htmlFor="" className='text-gray-500 ml-1 text-md mb-2 font-sans font-semibold'>FullName</label>
-             <input type="text" autoComplete="off" value={fullname} onChange={handleInputChange} name="fullname" id="" className='bg-black text-sm placeholder-opacity-5 text-gray-200 h-10 pl-3 rounded-lg' placeholder='Enter your username' />
-         </div>
-         <div className='flex flex-col mt-6'>
-             <label htmlFor="" className='text-gray-500 ml-1 text-md mb-2 font-sans font-semibold'>Email</label>
-             <input autoComplete="off" type="text" value={email} onChange={handleInputChange} name="email" id="" className='bg-black text-sm placeholder-opacity-5 text-gray-200 h-10 pl-3 rounded-lg' placeholder='your@gmail.com' />
-         </div>
-         <div className='flex flex-col mt-4'>
-             <label htmlFor="" className='text-gray-500 ml-1 text-md mb-2 font-sans font-semibold'>Product Image</label>
-             <input
-        type="file"
-        name="image"
-        onChange={handleInputChange}
-        accept="image/*" // Only allow image files
-      />
-         </div>
-         <div className='flex flex-col mt-4'>
-             <label htmlFor="" className='text-gray-500 ml-1 text-md mb-2 font-sans font-semibold'>Password</label>
-             <input autoComplete="off" type="password" value={password} onChange={handleInputChange} name="password" id="" className='bg-black text-sm placeholder-opacity-5 text-gray-200 h-10 pl-3 rounded-lg' placeholder='• • • • • •' />
-         </div>
-         <div className='flex flex-col mt-4'>
-             <label htmlFor="" className='text-gray-500 ml-1 text-md mb-2 font-sans font-semibold'>Confirm Password</label>
-             <input autoComplete="off" type="password" value={confirmpassword} onChange={handleInputChange} name="confirmPassword" id="" className='bg-black text-sm placeholder-opacity-5 text-gray-200 h-10 pl-3 rounded-lg' placeholder='• • • • • •' />
-         </div>
-         {error && <p className='text-red-600 ml-4'>{error}</p>}
-         <div className='mt-3'>
-         </div>
-         <div onClick={handleSignUp} className='bg-white mt-5 rounded-lg cursor-pointer h-10 flex justify-center'>
-         <button className='text-black font-sans font-semibold'>Sign Up</button>
-         </div>
-         <div className='flex justify-center mt-3 text-white'>
-             <p className='mr-1'>Already have an account?</p>
-             <Link to='/signin'>
-             <p className='font-semibold font-sans underline cursor-pointer'>Sign In</p>
-             </Link>
-         </div>
-     </div>
-    </div>
- </div>
- </>
+      {/* Divider */}
+      <div className="relative my-5">
+        <div className="absolute inset-0 flex items-center">
+          <div className="w-full border-t border-zinc-800" />
+        </div>
+        <div className="relative flex justify-center text-xs">
+          <span className="bg-[#0a0a0a] px-4 text-zinc-500 uppercase tracking-wider">
+            Or
+          </span>
+        </div>
+      </div>
+
+      {/* Avatar Upload */}
+      <div className="flex justify-center mb-5">
+        <div className="relative">
+          <div
+            onClick={() => fileInputRef.current?.click()}
+            className="w-20 h-20 rounded-full bg-zinc-900/50 border-2 border-dashed border-zinc-700 flex items-center justify-center cursor-pointer hover:border-violet-500 transition-all overflow-hidden group"
+          >
+            {avatarPreview ? (
+              <img
+                src={avatarPreview}
+                alt="Avatar preview"
+                className="w-full h-full object-cover"
+              />
+            ) : (
+              <div className="flex flex-col items-center text-zinc-500 group-hover:text-violet-400 transition-colors">
+                <User className="h-6 w-6 mb-1" />
+                <span className="text-xs">Photo</span>
+              </div>
+            )}
+          </div>
+          {avatarPreview && (
+            <button
+              type="button"
+              onClick={removeAvatar}
+              className="absolute -top-1 -right-1 bg-red-500 rounded-full p-1 hover:bg-red-600 transition-colors"
+            >
+              <X className="h-3 w-3 text-white" />
+            </button>
+          )}
+          <input
+            ref={fileInputRef}
+            type="file"
+            accept="image/*"
+            onChange={handleAvatarChange}
+            className="hidden"
+          />
+        </div>
+      </div>
+
+      {/* Form */}
+      <Form {...form}>
+        <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-3">
+          {/* Username & Full Name Row */}
+          <div className="grid grid-cols-2 gap-3">
+            <FormField
+              control={form.control}
+              name="username"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel className="text-zinc-400 text-sm font-medium">
+                    Username
+                  </FormLabel>
+                  <FormControl>
+                    <Input
+                      placeholder="johndoe"
+                      className="bg-zinc-900/50 border-zinc-800 text-white placeholder:text-zinc-600 h-11 rounded-xl focus:border-violet-500 focus:ring-1 focus:ring-violet-500 transition-all"
+                      autoComplete="username"
+                      disabled={isLoading}
+                      {...field}
+                    />
+                  </FormControl>
+                  <FormMessage className="text-red-400 text-xs" />
+                </FormItem>
+              )}
+            />
+
+            <FormField
+              control={form.control}
+              name="fullName"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel className="text-zinc-400 text-sm font-medium">
+                    Full Name
+                  </FormLabel>
+                  <FormControl>
+                    <Input
+                      placeholder="John Doe"
+                      className="bg-zinc-900/50 border-zinc-800 text-white placeholder:text-zinc-600 h-11 rounded-xl focus:border-violet-500 focus:ring-1 focus:ring-violet-500 transition-all"
+                      autoComplete="name"
+                      disabled={isLoading}
+                      {...field}
+                    />
+                  </FormControl>
+                  <FormMessage className="text-red-400 text-xs" />
+                </FormItem>
+              )}
+            />
+          </div>
+
+          {/* Email Field */}
+          <FormField
+            control={form.control}
+            name="email"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel className="text-zinc-400 text-sm font-medium">
+                  Email
+                </FormLabel>
+                <FormControl>
+                  <Input
+                    placeholder="you@example.com"
+                    className="bg-zinc-900/50 border-zinc-800 text-white placeholder:text-zinc-600 h-11 rounded-xl focus:border-violet-500 focus:ring-1 focus:ring-violet-500 transition-all"
+                    autoComplete="email"
+                    disabled={isLoading}
+                    {...field}
+                  />
+                </FormControl>
+                <FormMessage className="text-red-400 text-xs" />
+              </FormItem>
+            )}
+          />
+
+          {/* Password Field */}
+          <FormField
+            control={form.control}
+            name="password"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel className="text-zinc-400 text-sm font-medium">
+                  Password
+                </FormLabel>
+                <FormControl>
+                  <div className="relative">
+                    <Input
+                      type={showPassword ? 'text' : 'password'}
+                      placeholder="Create a strong password"
+                      className="bg-zinc-900/50 border-zinc-800 text-white placeholder:text-zinc-600 h-11 rounded-xl pr-12 focus:border-violet-500 focus:ring-1 focus:ring-violet-500 transition-all"
+                      autoComplete="new-password"
+                      disabled={isLoading}
+                      {...field}
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setShowPassword(!showPassword)}
+                      className="absolute right-4 top-1/2 -translate-y-1/2 text-zinc-500 hover:text-white transition-colors"
+                    >
+                      {showPassword ? (
+                        <EyeOff className="h-4 w-4" />
+                      ) : (
+                        <Eye className="h-4 w-4" />
+                      )}
+                    </button>
+                  </div>
+                </FormControl>
+                <FormMessage className="text-red-400 text-xs" />
+              </FormItem>
+            )}
+          />
+
+          {/* Confirm Password Field */}
+          <FormField
+            control={form.control}
+            name="confirmPassword"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel className="text-zinc-400 text-sm font-medium">
+                  Confirm Password
+                </FormLabel>
+                <FormControl>
+                  <div className="relative">
+                    <Input
+                      type={showConfirmPassword ? 'text' : 'password'}
+                      placeholder="Repeat your password"
+                      className="bg-zinc-900/50 border-zinc-800 text-white placeholder:text-zinc-600 h-11 rounded-xl pr-12 focus:border-violet-500 focus:ring-1 focus:ring-violet-500 transition-all"
+                      autoComplete="new-password"
+                      disabled={isLoading}
+                      {...field}
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                      className="absolute right-4 top-1/2 -translate-y-1/2 text-zinc-500 hover:text-white transition-colors"
+                    >
+                      {showConfirmPassword ? (
+                        <EyeOff className="h-4 w-4" />
+                      ) : (
+                        <Eye className="h-4 w-4" />
+                      )}
+                    </button>
+                  </div>
+                </FormControl>
+                <FormMessage className="text-red-400 text-xs" />
+              </FormItem>
+            )}
+          />
+
+          {/* Password Requirements - Visual Checklist */}
+          <div className="grid grid-cols-2 gap-2 text-xs">
+            <div className={`flex items-center gap-1.5 ${passwordChecks.length ? 'text-green-400' : 'text-zinc-500'}`}>
+              <Check className={`h-3 w-3 ${passwordChecks.length ? 'opacity-100' : 'opacity-40'}`} />
+              6+ characters
+            </div>
+            <div className={`flex items-center gap-1.5 ${passwordChecks.uppercase ? 'text-green-400' : 'text-zinc-500'}`}>
+              <Check className={`h-3 w-3 ${passwordChecks.uppercase ? 'opacity-100' : 'opacity-40'}`} />
+              Uppercase
+            </div>
+            <div className={`flex items-center gap-1.5 ${passwordChecks.lowercase ? 'text-green-400' : 'text-zinc-500'}`}>
+              <Check className={`h-3 w-3 ${passwordChecks.lowercase ? 'opacity-100' : 'opacity-40'}`} />
+              Lowercase
+            </div>
+            <div className={`flex items-center gap-1.5 ${passwordChecks.number ? 'text-green-400' : 'text-zinc-500'}`}>
+              <Check className={`h-3 w-3 ${passwordChecks.number ? 'opacity-100' : 'opacity-40'}`} />
+              Number
+            </div>
+          </div>
+
+          {/* Submit Button */}
+          <Button
+            type="submit"
+            disabled={isLoading}
+            className="w-full h-12 bg-gradient-to-r from-violet-600 to-purple-600 text-white font-semibold rounded-xl hover:from-violet-500 hover:to-purple-500 transition-all disabled:opacity-50 disabled:cursor-not-allowed shadow-lg shadow-violet-500/25 mt-2"
+          >
+            {isLoading ? (
+              <span className="flex items-center justify-center gap-2">
+                <Loader2 className="h-5 w-5 animate-spin" />
+                Creating account...
+              </span>
+            ) : (
+              'Create Account'
+            )}
+          </Button>
+        </form>
+      </Form>
+
+      {/* Sign In Link */}
+      <p className="text-center text-zinc-500 text-sm mt-6">
+        Already have an account?{' '}
+        <Link
+          to="/signin"
+          className="text-white font-medium hover:text-violet-400 transition-colors underline underline-offset-4"
+        >
+          Sign in
+        </Link>
+      </p>
+
+      {/* Terms */}
+      <p className="text-center text-zinc-600 text-xs mt-4">
+        By creating an account, you agree to our{' '}
+        <span className="text-zinc-400 hover:text-violet-400 cursor-pointer transition-colors">Terms</span>
+        {' '}and{' '}
+        <span className="text-zinc-400 hover:text-violet-400 cursor-pointer transition-colors">Privacy Policy</span>
+      </p>
+    </AuthLayout>
   )
 }
 

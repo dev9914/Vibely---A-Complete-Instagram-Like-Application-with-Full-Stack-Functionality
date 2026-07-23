@@ -1,18 +1,32 @@
 import { server } from './utils/socket.js';
-import connectDb from './db/DbConnect.js';
-import dotenv from 'dotenv';
-dotenv.config({
-  path:'./.env'
-})
+import './config/env.js';
+import { initializeRuntime, shutdownRuntime } from './bootstrap/runtime.js';
 
-const port = process.env.PORT || 5000
+const port = process.env.PORT || 5000;
 
-connectDb()
-.then(()=>{
-  server.listen(port ,()=>{
-    console.log(`listening at port ${port}`);
-  })
-})
-.catch((err)=>{
-  console.log("Db connection failed",err)
-})
+const shutdown = async (signal) => {
+  console.log(`⚠️ Received ${signal}, shutting down server`);
+
+  server.close(async () => {
+    await shutdownRuntime('http-server');
+    process.exit(0);
+  });
+};
+
+const start = async () => {
+  try {
+    await initializeRuntime('http-server');
+
+    server.listen(port, () => {
+      console.log(`✓ HTTP server listening on port ${port}`);
+    });
+  } catch (error) {
+    console.error('❌ Server startup failed:', error?.stack || error);
+    process.exit(1);
+  }
+};
+
+process.once('SIGINT', () => shutdown('SIGINT'));
+process.once('SIGTERM', () => shutdown('SIGTERM'));
+
+start();

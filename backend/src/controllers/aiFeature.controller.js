@@ -1,103 +1,112 @@
-import axios from 'axios';
 import { asyncHandler } from '../utils/asyncHandler.js';
 import { uploadOnCloudinary } from '../utils/cloudinary.js';
-import dotenv from 'dotenv';
+import { GoogleGenAI } from "@google/genai";
+
+import dotenv from "dotenv";
 dotenv.config();
+
+const ai = new GoogleGenAI({
+  apiKey: process.env.GEMINI_API_KEY,
+});
+
 
 export const generateCaptionsFromImage = asyncHandler(async (req, res) => {
   const { imageUrl } = req.body;
 
-  // Step 1: Get basic caption from Replicate (BLIP model)
-  const replicateResponse = await axios.post(
-    'https://api.replicate.com/v1/predictions',
-    {
-      version: '2e1dddc8621f72155f24cf2e0adbde548458d3cab9f00c0139eea840d0ac4746',
-      input: { image: imageUrl },
-    },
-    {
-      headers: {
-        Authorization: `Token ${process.env.REPLICATE_API_TOKEN}`,
-        'Content-Type': 'application/json',
-      },
-    }
-  );
-
-  const predictionUrl = replicateResponse.data.urls.get;
-
-  // Poll until caption is ready
-  let captionText;
-  while (true) {
-    const prediction = await axios.get(predictionUrl, {
-      headers: {
-        Authorization: `Token ${process.env.REPLICATE_API_TOKEN}`,
-      },
+  if (!imageUrl) {
+    return res.status(400).json({
+      message: "Image URL is required",
     });
-
-    if (prediction.data.status === 'succeeded') {
-      captionText = prediction.data.output;
-      break;
-    } else if (prediction.data.status === 'failed') {
-      throw new Error('Replicate captioning failed.');
-    }
-
-    await new Promise((resolve) => setTimeout(resolve, 1000));
   }
+try {
+  const response = await ai.models.generateContent({
+    model: "gemini-flash-latest",
 
-  // Step 2: Use Gemini API to generate stylish Instagram captions
-const response = await axios.post(
-  `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${process.env.GEMINI_API_KEY}`,
-  {
     contents: [
       {
+        role: "user",
+
         parts: [
           {
+            fileData: {
+              fileUri: imageUrl,
+              mimeType: "image/jpeg",
+            },
+          },
+
+          {
             text: `
-You are an assistant that generates clean Instagram captions based on a photo description.
+You are a professional Instagram content creator.
 
-Always return output in this strict format (no extra text, no titles):
+Look at this image.
 
-Just return captions in this format:
-1. <caption>
-2. <caption>
-3. <caption>
+Generate exactly 5 different Instagram captions.
 
-Now generate based on: "${captionText}"
+Rules:
+
+- Each caption should be unique.
+- Mix short and long captions.
+- Add suitable emojis.
+- Don't explain anything.
+- Return ONLY captions.
+
+Format:
+
+1. caption
+
+2. caption
+
+3. caption
+
+4. caption
+
+5. caption
 `,
           },
         ],
       },
     ],
-  }
-);
+  });
 
 
-const rawText =
-  response.data?.candidates?.[0]?.content?.parts?.[0]?.text || '';
+  const text = response.text;
 
-const captions = rawText
-  .split('\n')
-  .map((line) => line.trim())               // clean spaces
-  .filter((line) => /^\d+\.\s+/.test(line)) // keep only lines that start with 1. 2. 3.
-
+  const captions = text
+    .split("\n")
+    .map((line) => line.trim())
+    .filter((line) => /^\d+\./.test(line));
 
   res.json({
-    original: captionText,
+    original: "Generated using Gemini Vision",
     aiCaptions: captions,
   });
+
+} catch (error) {
+   console.error("========== GEMINI ERROR ==========");
+  console.error(error);
+  console.error("==================================");
+
+  return res.status(500).json({
+    success: false,
+    message: error.message,
+    error,
+  });
+}
 });
+
 
 export const getImageUrl = asyncHandler(async ( req, res) => {
   const localImages = req.files?.image?.map(image => image.path)
 
-  if (!localImages) {
+  if (!localImages?.length) {
     return res.status(400).json({ message: 'No image file uploaded.' });
   }
 
   const result = await uploadOnCloudinary(localImages)
   console.log(result)
 
-  if(!result) {
-    return res.status(501).json("Some Error Occured while uploading")
+  if (!result?.length) {
+    return res.status(500).json("Some Error Occured while uploading")
   }
 
   res.status(200).json({ imageUrl: result[0].secure_url });

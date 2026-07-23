@@ -34,7 +34,6 @@ import {
   TableHeader,
   TableRow,
 } from "./ui/table"
-import axios from "axios"
  
 let data: Payment[] = [
  
