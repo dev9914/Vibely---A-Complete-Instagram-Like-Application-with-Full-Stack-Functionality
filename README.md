@@ -1,101 +1,432 @@
-# 📸 Instagram Clone (MERN Stack + AWS + Kubernetes)
+# Vibely
 
-## � NEW: Real-Time Notifications & Push Notifications
-
-Vibely now includes a **production-ready notification system** with:
-- 🔔 **In-App Notifications** - Bell icon with unread count badge
-- 📱 **Push Notifications** - FCM-powered push notifications (foreground & background)
-- 🔄 **Real-Time Updates** - Auto-refresh notifications every 30 seconds
-- 🌐 **Multi-Device Support** - Receive notifications on all your devices
-- 🎯 **Smart Triggers** - Get notified on likes, comments, and follows
-
-📖 **Quick Setup:** [QUICK_START_NOTIFICATIONS.md](./QUICK_START_NOTIFICATIONS.md)  
-🧪 **Testing Guide:** [NOTIFICATION_TESTING_GUIDE.md](./NOTIFICATION_TESTING_GUIDE.md)  
-📊 **Full Documentation:** [NOTIFICATION_IMPLEMENTATION_SUMMARY.md](./NOTIFICATION_IMPLEMENTATION_SUMMARY.md)
+A modern, full-stack social media platform inspired by Instagram, built with the MERN stack. Vibely combines real-time communication, background job processing, push notifications, cloud media storage, and cloud-native deployment into a production-ready application.
 
 ---
 
-## �🌟 Overview
-This is a **full-fledged Instagram Clone** built using the **MERN stack** with **AWS deployment** and **Kubernetes orchestration**. It includes all core Instagram features such as user authentication, posts, comments, likes, notifications, and friend requests.
+## Overview
 
-## 🚀 Live Demo
-🔗 **[Project Live Link](#)** (Replace with actual URL)
+Vibely is designed to demonstrate the architecture and engineering practices used in modern web applications. It includes secure authentication, social interactions, real-time messaging, notification delivery, scalable background processing, and multiple deployment strategies.
 
-## 🎯 Features
-✅ **User Authentication** (Sign Up, Login, JWT-based Auth)
-✅ **Create, Edit & Delete Posts** (Images & Captions)
-✅ **Like & Comment System** (Real-time updates)
-✅ **Follow / Unfollow Users**
-✅ **User Profiles & Feeds**
-✅ **AWS Deployed with Kubernetes & Auto Scaling**
-✅ **CI/CD Pipeline with GitHub Actions**
+The project is actively maintained and serves as both a learning project and a portfolio application showcasing full-stack development and cloud deployment.
 
-## 🛠️ Tech Stack
-- **Frontend:** React, TypeScript, TailwindCSS
-- **Backend:** Node.js, Express.js, MongoDB
-- **State Management:** Redux Toolkit
-- **Authentication:** JWT, Bcrypt
-- **Deployment:** Docker, AWS EKS, Kubernetes, Nginx
-- **CI/CD:** GitHub Actions
+---
 
-## 🎯 Architecture & Deployment
-This project is **containerized** using Docker and deployed on **AWS EKS (Kubernetes)** with auto-scaling.
+## Live Demo
 
-- **Frontend & Backend run in separate containers**
-- **Nginx as a reverse proxy for handling requests**
-- **MongoDB Atlas for database**
-- **CI/CD pipeline automates build & deployment**
+**Frontend**
 
-## 📂 Project Structure
+https://vibely-social-media-app-frontend.onrender.com/
+
+> The backend is hosted separately on Render and powers authentication, APIs, messaging, notifications, and media management.
+
+---
+
+## Features
+
+### Authentication
+
+- User registration
+- Secure login
+- JWT authentication
+- Refresh token authentication
+- Protected routes
+- Persistent sessions
+- Password hashing using Bcrypt
+
+---
+
+### User Profiles
+
+- Create profile
+- Edit profile
+- Upload profile picture
+- Update bio
+- Follow users
+- Unfollow users
+- Followers & following
+- Suggested users
+
+---
+
+### Posts
+
+- Upload images
+- Create posts
+- Edit posts
+- Delete posts
+- Like posts
+- Unlike posts
+- Save posts
+- Personalized feed
+
+---
+
+### Comments
+
+- Add comments
+- Delete comments
+- Real-time comment updates
+
+---
+
+### Messaging
+
+- One-to-one conversations
+- Real-time messaging
+- Socket.IO integration
+- Instant message delivery
+
+---
+
+### Notification System
+
+#### In-App Notifications
+
+- Like notifications
+- Comment notifications
+- Follow notifications
+- Read / unread status
+- Notification badge
+
+#### Push Notifications
+
+- Firebase Cloud Messaging (FCM)
+- Foreground notifications
+- Background notifications
+- Multi-device support
+- Automatic device registration
+
+#### Background Processing
+
+- BullMQ job queue
+- Upstash Redis
+- Retry mechanism
+- Worker-based notification processing
+
+---
+
+### Media Management
+
+- Cloudinary integration
+- Secure image uploads
+- Optimized cloud storage
+
+---
+
+## Tech Stack
+
+### Frontend
+
+- React
+- TypeScript
+- Redux Toolkit
+- React Router
+- Tailwind CSS
+- Shadcn UI
+- Axios
+- Socket.IO Client
+
+### Backend
+
+- Node.js
+- Express.js
+- MongoDB
+- Mongoose
+- JWT
+- Bcrypt
+- Socket.IO
+- BullMQ
+- Firebase Admin SDK
+- Cloudinary
+
+### Infrastructure
+
+- MongoDB Atlas
+- Upstash Redis
+- Render
+- Docker
+- Docker Compose
+- Kubernetes
+- AWS Elastic Kubernetes Service (EKS)
+- Nginx
+- GitHub Actions
+
+---
+
+## System Architecture
+
 ```
-insta-clone/
-│── backend/      # Express.js Server
-│── frontend/     # React + TypeScript Frontend
-│── k8s/          # Kubernetes Configurations
-│── .github/      # CI/CD Workflows
-│── README.md     # Project Documentation
+                          React + TypeScript
+                                  │
+                                  │
+                                  ▼
+                          Express.js REST API
+                                  │
+          ┌──────────────┬────────┴───────────┬──────────────┐
+          │              │                    │              │
+          ▼              ▼                    ▼              ▼
+    MongoDB Atlas   Cloudinary          Socket.IO      Authentication
+          │
+          ▼
+      BullMQ Queue
+          │
+          ▼
+    Upstash Redis
+          │
+          ▼
+ Notification Worker
+          │
+          ▼
+ Firebase Cloud Messaging
+          │
+          ▼
+      User Devices
 ```
 
-## 🖥️ Local Setup
-### Prerequisites
-Ensure you have **Node.js, Docker, and Kubernetes (kubectl, minikube, or AWS EKS)** installed.
+---
 
+## Project Structure
 
-### 2️⃣ Install Dependencies
-```sh
-cd backend && npm install
-cd ../frontend && npm install
+```
+Vibely
+│
+├── backend
+│   ├── src
+│   │   ├── controllers
+│   │   ├── middleware
+│   │   ├── models
+│   │   ├── routes
+│   │   ├── services
+│   │   ├── utils
+│   │   └── bootstrap
+│   │
+│   ├── config
+│   ├── queues
+│   └── package.json
+│
+├── frontend
+│   ├── src
+│   ├── public
+│   └── package.json
+│
+├── docker
+├── k8s
+├── .github
+│
+└── README.md
 ```
 
-### 3️⃣ Start Development Server
-- **Backend:**
-  ```sh
-  cd backend
-  npm run dev
-  ```
-- **Frontend:**
-  ```sh
-  cd frontend
-  npm start
-  ```
+---
 
-### 4️⃣ Run with Docker
-```sh
+## Local Development
+
+### Clone the repository
+
+```bash
+git clone https://github.com/dev9914/Vibely.git
+
+cd Vibely
+```
+
+---
+
+### Install dependencies
+
+Backend
+
+```bash
+cd backend
+npm install
+```
+
+Frontend
+
+```bash
+cd frontend
+npm install
+```
+
+---
+
+### Backend Environment Variables
+
+Create a `.env` file inside the `backend` directory.
+
+```env
+PORT=
+
+MONGODB_URI=
+
+ACCESS_TOKEN_SECRET=
+ACCESS_TOKEN_EXPIRY=
+
+REFRESH_TOKEN_SECRET=
+REFRESH_TOKEN_EXPIRY=
+
+CLIENT_URL=
+
+REDIS_URL=
+
+CLOUDINARY_CLOUD_NAME=
+CLOUDINARY_API_KEY=
+CLOUDINARY_API_SECRET=
+
+FIREBASE_PROJECT_ID=
+FIREBASE_CLIENT_EMAIL=
+FIREBASE_PRIVATE_KEY=
+```
+
+---
+
+### Frontend Environment Variables
+
+Create a `.env` file inside the `frontend` directory.
+
+```env
+VITE_API_URL=
+VITE_SOCKET_URL=
+```
+
+---
+
+### Start the backend
+
+```bash
+cd backend
+
+npm run dev
+```
+
+---
+
+### Start the frontend
+
+```bash
+cd frontend
+
+npm run dev
+```
+
+---
+
+## Docker
+
+The repository includes Docker configuration for local containerized development.
+
+Build and start the application:
+
+```bash
 docker-compose up --build
 ```
 
-### 5️⃣ Deploy to Kubernetes (AWS EKS)
-```sh
+---
+
+## Kubernetes Deployment
+
+The project also includes Kubernetes manifests for deployment on AWS Elastic Kubernetes Service (EKS).
+
+Deploy the application using:
+
+```bash
 kubectl apply -f k8s/
 ```
 
-## 📌 Future Improvements
-- Add **AI-powered features**
-- Implement **Story Feature**
-- Improve **SEO & Performance**
+---
 
-## 🤝 Contributing
-Feel free to fork this repository and submit a pull request. Let's improve it together! 🚀
+## Continuous Integration
 
-## 📜 License
-This project is licensed under the **MIT License**.
+GitHub Actions workflows are included for automated build and deployment.
+
+The CI/CD pipeline supports:
+
+- Dependency installation
+- Project build
+- Docker image creation
+- Container registry publishing
+- Kubernetes deployment
+
+---
+
+## Screenshots
+
+The following screenshots can be added here:
+
+- Authentication
+- Home Feed
+- User Profile
+- Post Creation
+- Messaging
+- Notifications
+- Mobile View
+
+---
+
+## Future Improvements
+
+- Stories
+- Reels
+- Video uploads
+- AI-powered captions
+- User blocking
+- Advanced search
+- Email notifications
+- Performance improvements
+
+---
+
+## What This Project Demonstrates
+
+- Full-stack application development
+- RESTful API design
+- Authentication & authorization
+- Real-time communication
+- Background job processing
+- Push notification architecture
+- Cloud media management
+- Containerization
+- Kubernetes deployment
+- CI/CD workflows
+- Cloud infrastructure
+- Scalable backend architecture
+
+---
+
+## Contributing
+
+Contributions are welcome.
+
+1. Fork the repository.
+2. Create a new branch.
+
+```bash
+git checkout -b feature/my-feature
+```
+
+3. Commit your changes.
+
+```bash
+git commit -m "Add new feature"
+```
+
+4. Push your branch.
+
+```bash
+git push origin feature/my-feature
+```
+
+5. Open a Pull Request.
+
+---
+
+## License
+
+This project is licensed under the MIT License.
+
+---
+
+## Author
+
+**Devanand**
+
+GitHub: https://github.com/dev9914
