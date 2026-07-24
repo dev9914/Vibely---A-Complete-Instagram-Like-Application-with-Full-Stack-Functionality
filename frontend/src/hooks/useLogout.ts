@@ -2,8 +2,10 @@ import { useCallback } from 'react';
 import { useDispatch } from 'react-redux';
 import { useNavigate } from 'react-router-dom';
 import { logout as logoutAction } from '@/store/authSlice';
+import { resetMessaging } from '@/store/messagingSlice';
 import { useLogoutMutation } from '@/services/userApi';
 import { api } from '@/services/api';
+import { disconnectSocket } from '@/lib/socket';
 
 /**
  * Centralized logout flow:
@@ -23,7 +25,9 @@ export function useLogout() {
     } catch {
       // Still clear client state if the token is expired or the request fails
     } finally {
+      disconnectSocket();
       dispatch(logoutAction());
+      dispatch(resetMessaging());
       dispatch(api.util.resetApiState());
       navigate('/signin', { replace: true });
     }

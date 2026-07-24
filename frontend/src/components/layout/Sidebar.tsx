@@ -36,6 +36,7 @@ import {
 } from '@/components/ui/tooltip'
 import NotificationPanel from '@/components/notifications/NotificationPanel'
 import { useGetNotificationsQuery } from '@/services/notificationApi'
+import { useGetUnreadCountQuery } from '@/services/messageApi'
 import { openCreatePostModal } from '@/store/uiSlice'
 import { useLogout } from '@/hooks/useLogout'
 
@@ -56,6 +57,7 @@ interface NavItem {
   href?: string
   onClick?: () => void
   isNotification?: boolean
+  badgeCount?: number
 }
 
 const Sidebar = ({ user, collapsed = false, onCollapsedChange }: SidebarProps) => {
@@ -71,6 +73,11 @@ const Sidebar = ({ user, collapsed = false, onCollapsedChange }: SidebarProps) =
     pollingInterval: 30000,
   })
   const unreadCount = notificationData?.unreadCount || 0
+  const { data: unreadMessages } = useGetUnreadCountQuery(undefined, {
+    skip: !user._id,
+    pollingInterval: 30000,
+  })
+  const messageUnreadCount = unreadMessages?.count || 0
 
   // Sidebar stays collapsed when notification panel is open (like Instagram)
   // Only expand on hover or dropdown when not viewing notifications
@@ -81,20 +88,30 @@ const Sidebar = ({ user, collapsed = false, onCollapsedChange }: SidebarProps) =
     { icon: Search, label: 'Search', href: '/search' },
     { icon: Compass, label: 'Explore', href: '/explore' },
     { icon: Film, label: 'Reels', href: '/reels' },
-    { icon: MessageCircle, label: 'Messages', href: '/messages' },
+    { icon: MessageCircle, label: 'Messages', href: '/messages', badgeCount: messageUnreadCount },
     { icon: Bell, label: 'Notifications', isNotification: true, onClick: () => setIsNotificationOpen(true) },
     { icon: PlusSquare, label: 'Create', onClick: () => dispatch(openCreatePostModal()) },
   ]
 
   const isActive = (href?: string) => {
     if (!href) return false
+    if (href === '/messages') {
+      return location.pathname === href || location.pathname.startsWith('/chat/')
+    }
     return location.pathname === href
   }
 
   const NavLink = ({ item }: { item: NavItem }) => {
     const content = (
       <>
-        <item.icon className={cn("h-6 w-6 shrink-0", !isExpanded && "h-7 w-7")} />
+        <div className="relative">
+          <item.icon className={cn("h-6 w-6 shrink-0", !isExpanded && "h-7 w-7")} />
+          {(item.badgeCount ?? 0) > 0 && (
+            <span className="absolute -top-1 -right-1 flex items-center justify-center min-w-[16px] h-4 px-1 text-[10px] font-bold text-white bg-red-500 rounded-full">
+              {(item.badgeCount ?? 0) > 99 ? '99+' : item.badgeCount}
+            </span>
+          )}
+        </div>
         <span className={cn(
           "text-sm font-medium transition-all duration-200",
           isExpanded ? "opacity-100 ml-4" : "opacity-0 w-0 ml-0 overflow-hidden"

@@ -80,6 +80,10 @@ location: {
   default: "",
   trim: true,
 },
+    lastSeen: {
+      type: Date,
+      default: Date.now,
+    },
     // 🔔 FCM Push Notification Tokens
     fcmTokens: [
       {

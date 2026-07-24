@@ -1,18 +1,5 @@
 import { api } from "./api";
-
-/**
- * Message API Service
- *
- * Handles all messaging-related endpoints including:
- * - Send/receive messages
- * - Conversations management
- * - Message history
- *
- * Note: Real-time message delivery is handled via Socket.IO
- * This API is for HTTP-based message operations and fetching history
- */
-
-// ========== TYPES ==========
+import { MESSAGES_PER_PAGE } from "@/lib/constants";
 
 export interface MessageUser {
   _id: string;
@@ -21,11 +8,28 @@ export interface MessageUser {
   avatar: string;
 }
 
+export interface MessageAttachment {
+  url: string;
+  type: "image" | "video" | "pdf" | "zip" | "document" | "voice" | "file";
+  name?: string;
+  size?: number;
+  duration?: number;
+  mimeType?: string;
+}
+
 export interface Message {
   _id: string;
+  conversationId?: string;
   senderId: string | MessageUser;
   receiverId: string | MessageUser;
   message: string;
+  type?: "text" | "image" | "video" | "file" | "voice";
+  attachments?: MessageAttachment[];
+  replyTo?: Message | string | null;
+  status?: "pending" | "sent" | "delivered" | "seen" | "failed";
+  deliveredAt?: string | null;
+  seenAt?: string | null;
+  clientId?: string;
   createdAt: string;
   updatedAt: string;
 }
@@ -35,47 +39,30 @@ export interface Conversation {
   user: MessageUser;
   lastMessage: Message | null;
   unreadCount: number;
+  muted?: boolean;
   updatedAt: string;
+  lastSeen?: string | null;
 }
 
-export interface ConversationStatusResponse {
-  success: boolean;
-  exists: boolean;
-  conversationId: string | null;
-}
-
-export interface MessagesResponse {
-  success: boolean;
+export interface MessagesPage {
   messages: Message[];
-}
-
-export interface ConversationsResponse {
-  success: boolean;
-  conversations: Conversation[];
+  hasMore: boolean;
+  conversationId: string | null;
 }
 
 export interface SendMessageRequest {
   receiverId: string;
   message: string;
+  type?: Message["type"];
+  attachments?: MessageAttachment[];
+  replyTo?: string;
+  clientId?: string;
 }
-
-export interface SendMessageResponse {
-  success: boolean;
-  message: Message;
-  conversationId: string;
-}
-
-// ========== API ENDPOINTS ==========
 
 export const messageApi = api.injectEndpoints({
   endpoints: (builder) => ({
-    /**
-     * Get all conversations for current user
-     */
-    getConversations: builder.query<ConversationsResponse, void>({
+    getConversations: builder.query<{ conversations: Conversation[] }, void>({
       query: () => "/message/conversations",
-      refetchOnMountOrArgChange: true,
-      refetchOnReconnect: true,
       providesTags: (result) =>
         result?.conversations
           ? [
@@ -88,218 +75,174 @@ export const messageApi = api.injectEndpoints({
           : [{ type: "Conversation", id: "LIST" }],
     }),
 
-    /**
-     * Get messages between current user and another user
-     */
-    getMessages: builder.query<MessagesResponse, string>({
-      query: (userId) => `/message/get/${userId}`,
+    getMessages: builder.query<MessagesPage, string>({
+      query: (userId) =>
+        `/message/get/${userId}?limit=${MESSAGES_PER_PAGE}`,
+      serializeQueryArgs: ({ queryArgs }) => queryArgs,
+      merge: (currentCache, newItems, { arg }) => {
+        if (!currentCache) return newItems;
+        // Initial load replaces; pagination handled via fetchMore in component
+        return newItems;
+      },
       providesTags: (_result, _error, userId) => [
         { type: "Message", id: userId },
       ],
     }),
 
-    getConversationStatus: builder.query<
-    ConversationStatusResponse,
-    string
->({
-    query: (userId) =>
-        `/message/conversation/${userId}`,
-}),
+    loadMoreMessages: builder.query<
+      MessagesPage,
+      { userId: string; before: string }
+    >({
+      query: ({ userId, before }) =>
+        `/message/get/${userId}?limit=${MESSAGES_PER_PAGE}&before=${before}`,
+    }),
 
-    /**
-     * Send a message
-     * Socket.IO will handle real-time delivery, but we update cache here
-     */
-    sendMessage: builder.mutation<SendMessageResponse, SendMessageRequest>({
-      query: ({ receiverId, message }) => ({
+    getConversationStatus: builder.query<
+      { exists: boolean; conversationId: string | null },
+      string
+    >({
+      query: (userId) => `/message/conversation/${userId}`,
+    }),
+
+    sendMessage: builder.mutation<
+      { message: Message; conversationId: string },
+      SendMessageRequest
+    >({
+      query: ({ receiverId, message, type, attachments, replyTo, clientId }) => ({
         url: `/message/send/${receiverId}`,
         method: "POST",
-        body: { message },
+        body: { message, type, attachments, replyTo, clientId },
       }),
-      // Optimistic update - add message to cache immediately
       async onQueryStarted(
-        { receiverId, message },
+        { receiverId, message, clientId, type, attachments, replyTo },
         { dispatch, queryFulfilled, getState },
       ) {
         const state: any = getState();
         const currentUser = state.auth.user;
-
         if (!currentUser) return;
 
-        // Create optimistic message
+        const tempId = clientId || `temp-${Date.now()}`;
         const optimisticMessage: Message = {
-          _id: `temp-${Date.now()}`,
+          _id: tempId,
           senderId: currentUser._id,
           receiverId,
           message,
+          type: type || "text",
+          attachments,
+          replyTo: replyTo as any,
+          status: "pending",
+          clientId: tempId,
           createdAt: new Date().toISOString(),
           updatedAt: new Date().toISOString(),
         };
 
-        // Update messages cache
-        const patchResult = dispatch(
-          messageApi.util.updateQueryData(
-            "getMessages",
-            receiverId,
-            (draft) => {
-              draft.messages.push(optimisticMessage);
-            },
-          ),
-        );
+        const existing = messageApi.endpoints.getMessages.select(receiverId)(state);
+        const patchResult = existing?.data
+          ? dispatch(
+              messageApi.util.updateQueryData("getMessages", receiverId, (draft) => {
+                draft.messages.push(optimisticMessage);
+              }),
+            )
+          : dispatch(
+              messageApi.util.upsertQueryData("getMessages", receiverId, {
+                messages: [optimisticMessage],
+                hasMore: false,
+                conversationId: null,
+              }),
+            );
 
         try {
           const { data } = await queryFulfilled;
-
-          // Replace temp message with real message
           dispatch(
-            messageApi.util.updateQueryData(
-              "getMessages",
-              receiverId,
-              (draft) => {
-                const index = draft.messages.findIndex(
-                  (m) => m._id === optimisticMessage._id,
-                );
-                if (index !== -1) {
-                  draft.messages[index] = data.message;
-                }
-              },
-            ),
+            messageApi.util.updateQueryData("getMessages", receiverId, (draft) => {
+              const index = draft.messages.findIndex(
+                (m) => m._id === tempId || m.clientId === tempId,
+              );
+              if (index !== -1) {
+                draft.messages[index] = { ...data.message, status: "sent" };
+              }
+              draft.conversationId = data.conversationId;
+            }),
           );
-
-          // Update conversations cache so newly created conversations appear immediately in the list.
           dispatch(
-            messageApi.util.updateQueryData(
-              "getConversations",
-              undefined,
-              (draft) => {
-                if (!draft || !draft.conversations) {
-                  return;
-                }
-
-                const otherUser =
-                  typeof data.message.receiverId === "object"
-                    ? data.message.receiverId
-                    : {
-                        _id: receiverId,
-                        username: "",
-                        fullName: "",
-                        avatar: "",
-                      };
-
-                const existingConversation = draft.conversations.find(
-                  (conversation) =>
-                    conversation.user._id === receiverId,
-                );
-
-                const newConversation = {
-                  _id: data.conversationId || `temp-${Date.now()}`,
-                  user: otherUser,
-                  lastMessage: data.message,
-                  unreadCount: 0,
-                  updatedAt: data.message.createdAt,
-                };
-
-                if (existingConversation) {
-                  existingConversation.lastMessage = data.message;
-                  existingConversation.updatedAt = data.message.createdAt;
-                  existingConversation.unreadCount = 0;
-                } else {
-                  draft.conversations = [newConversation, ...(draft.conversations || [])];
-                }
-              },
-            ),
-          );
-
-          dispatch(
-            messageApi.util.invalidateTags([
-              { type: "Conversation", id: "LIST" },
-            ]),
+            messageApi.util.invalidateTags([{ type: "Conversation", id: "LIST" }]),
           );
         } catch {
           patchResult.undo();
+          dispatch(
+            messageApi.util.updateQueryData("getMessages", receiverId, (draft) => {
+              const index = draft.messages.findIndex(
+                (m) => m._id === tempId || m.clientId === tempId,
+              );
+              if (index !== -1) draft.messages[index].status = "failed";
+            }),
+          );
         }
       },
-      invalidatesTags: (_result, _error, { receiverId }) => [
-        { type: "Message", id: receiverId },
-        { type: "Conversation", id: "LIST" },
-      ],
     }),
 
-    /**
-     * Mark messages as read
-     */
     markMessagesAsRead: builder.mutation<{ success: boolean }, string>({
       query: (conversationId) => ({
         url: `/message/${conversationId}/read`,
         method: "PATCH",
       }),
-      // Optimistic update
       async onQueryStarted(conversationId, { dispatch, queryFulfilled }) {
         const patchResult = dispatch(
-          messageApi.util.updateQueryData(
-            "getConversations",
-            undefined,
-            (draft) => {
-              const conversation = draft.conversations.find(
-                (c) => c._id === conversationId,
-              );
-              if (conversation) {
-                conversation.unreadCount = 0;
-              }
-            },
-          ),
+          messageApi.util.updateQueryData("getConversations", undefined, (draft) => {
+            const conversation = draft?.conversations?.find((c) => c._id === conversationId);
+            if (conversation) conversation.unreadCount = 0;
+          }),
         );
-
         try {
           await queryFulfilled;
+          dispatch(messageApi.util.invalidateTags([{ type: "Message", id: "UNREAD_COUNT" }]));
         } catch {
           patchResult.undo();
         }
       },
+    }),
+
+    deleteMessage: builder.mutation<
+      { success: boolean },
+      { messageId: string; scope?: "me" | "everyone" }
+    >({
+      query: ({ messageId, scope = "me" }) => ({
+        url: `/message/${messageId}?scope=${scope}`,
+        method: "DELETE",
+      }),
       invalidatesTags: [{ type: "Conversation", id: "LIST" }],
     }),
 
-    /**
-     * Delete a message
-     */
-    deleteMessage: builder.mutation<{ success: boolean }, string>({
-      query: (messageId) => ({
-        url: `/message/${messageId}`,
-        method: "DELETE",
-      }),
-      invalidatesTags: [
-        { type: "Message" },
-        { type: "Conversation", id: "LIST" },
-      ],
-    }),
-
-    /**
-     * Get unread message count
-     */
-    getUnreadCount: builder.query<{ success: boolean; count: number }, void>({
+    getUnreadCount: builder.query<{ count: number }, void>({
       query: () => "/message/unread-count",
       providesTags: [{ type: "Message", id: "UNREAD_COUNT" }],
+    }),
+
+    muteConversation: builder.mutation<
+      { success: boolean; muted: boolean },
+      { conversationId: string; muted: boolean }
+    >({
+      query: ({ conversationId, muted }) => ({
+        url: `/message/${conversationId}/settings`,
+        method: "PATCH",
+        body: { muted },
+      }),
+      invalidatesTags: [{ type: "Conversation", id: "LIST" }],
     }),
   }),
 });
 
-// ========== EXPORT HOOKS ==========
-
-/**
- * Auto-generated hooks for use in components
- *
- * Usage:
- * const { data, isLoading } = useGetConversationsQuery();
- * const [sendMessage] = useSendMessageMutation();
- */
 export const {
   useGetConversationsQuery,
   useGetMessagesQuery,
+  useLoadMoreMessagesQuery,
+  useLazyLoadMoreMessagesQuery,
   useSendMessageMutation,
   useMarkMessagesAsReadMutation,
   useDeleteMessageMutation,
   useGetUnreadCountQuery,
-  useGetConversationStatusQuery
+  useGetConversationStatusQuery,
+  useMuteConversationMutation,
 } = messageApi;
 
 export default messageApi;

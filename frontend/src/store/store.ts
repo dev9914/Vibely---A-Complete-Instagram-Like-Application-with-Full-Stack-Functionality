@@ -4,16 +4,15 @@ import { api } from '../services/api';
 import authSlice from "./authSlice";
 import commentSlice from "./commentSlice";
 import uiSlice from "./uiSlice";
+import messagingSlice from "./messagingSlice";
 
 const store = configureStore({
     reducer: {
-        // RTK Query API reducer
         [api.reducerPath]: api.reducer,
-        
-        // Existing slices
         auth: authSlice,
         comment: commentSlice,
-        ui: uiSlice
+        ui: uiSlice,
+        messaging: messagingSlice,
     },
     // Add RTK Query middleware for caching, invalidation, polling, etc.
     middleware: (getDefaultMiddleware) =>

@@ -8,7 +8,7 @@ export const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000/ap
 
 // ========== PAGINATION ==========
 export const POSTS_PER_PAGE = 10
-export const MESSAGES_PER_PAGE = 50
+export const MESSAGES_PER_PAGE = 30
 export const USERS_PER_PAGE = 20
 
 // ========== FILE UPLOAD LIMITS ==========
@@ -27,10 +27,16 @@ export const MIN_PASSWORD_LENGTH = 6
 
 // ========== SOCKET EVENTS ==========
 export const SOCKET_EVENTS = {
+  MESSAGE_NEW: 'message:new',
+  MESSAGE_DELIVERED: 'message:delivered',
+  MESSAGE_SEEN: 'message:seen',
+  MESSAGE_DELETE: 'message:delete',
+  TYPING_START: 'typing:start',
+  TYPING_STOP: 'typing:stop',
+  PRESENCE_UPDATE: 'presence:update',
+  CONVERSATION_UPDATE: 'conversation:update',
   NEW_MESSAGE: 'newMessage',
   ONLINE_USERS: 'getOnlineUsers',
-  USER_CONNECTED: 'userConnected',
-  USER_DISCONNECTED: 'userDisconnected',
   NEW_NOTIFICATION: 'newNotification',
 } as const
 

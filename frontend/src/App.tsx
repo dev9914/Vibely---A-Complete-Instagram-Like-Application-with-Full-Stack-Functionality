@@ -21,6 +21,7 @@ import ProtectedRoutes from '@/components/ProtectedRoutes'
 // Services & Store
 import { useGetCurrentUserQuery } from '@/services/userApi'
 import { useNotifications } from '@/hooks/useNotifications'
+import { useMessagingSocket } from '@/hooks/useMessagingSocket'
 import { selectIsAuthenticated, setUser, setInitialized } from '@/store/authSlice'
 import MessageHome from './components/messages/MessageHome'
 import MessagesLayout from './components/layout/MessagesLayout'
@@ -64,6 +65,9 @@ if (isSuccess && userData) {
     requestPermission,
     registerToken,
   } = useNotifications()
+
+  // Global messaging socket (presence, realtime inbox, read receipts)
+  useMessagingSocket()
 
   // Auto-request notification permission when user logs in
   useEffect(() => {
